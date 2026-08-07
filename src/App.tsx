@@ -5,8 +5,10 @@ import {
 } from "react-router-dom";
 
 import { useHouse } from "./context/HouseContext";
+
 import HomePage from "./pages/HomePage";
 import WelcomePage from "./pages/WelcomePage";
+import RecipeSelectionPage from "./pages/RecipeSelectionPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 
 export default function App() {
@@ -24,13 +26,23 @@ export default function App() {
       />
 
       <Route
+        path="/choose"
+        element={<RecipeSelectionPage />}
+      />
+
+      <Route
         path="/settings"
         element={<SettingsPage />}
       />
 
       <Route
         path="*"
-        element={<Navigate to="/" replace />}
+        element={
+          <Navigate
+            to="/"
+            replace
+          />
+        }
       />
     </Routes>
   );

@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
 import AppShell from "../components/layout/AppShell";
-import Header from "../components/layout/Header";
+import HomeHeader from "../components/layout/HomeHeader";
 import MealList from "../components/meals/MealList";
 import ShoppingSummary from "../components/shopping/ShoppingSummary";
 import WeekNavigator from "../components/navigation/WeekNavigator";
-import ProgressCard from "../components/navigation/ProgressCard";
 
 import MealDetails from "../components/MealDetails";
-import MealSelectorModal from "../components/MealSelectorModal";
 import ShoppingListModal from "../components/ShoppingListModal";
 
 import { meals } from "../data/meals";
@@ -38,30 +39,81 @@ const shortDays: Record<Day, string> = {
 function getMonday(date: Date) {
   const result = new Date(date);
   const day = result.getDay();
-  const difference = day === 0 ? -6 : 1 - day;
+  const difference =
+    day === 0 ? -6 : 1 - day;
 
-  result.setDate(result.getDate() + difference);
+  result.setDate(
+    result.getDate() + difference
+  );
+
   result.setHours(0, 0, 0, 0);
 
   return result;
 }
 
-function formatWeekLabel(monday: Date) {
+function dateFromWeekStart(
+  value: string | null
+) {
+  if (
+    !value ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
+    return null;
+  }
+
+  const [year, month, day] =
+    value.split("-").map(Number);
+
+  const date = new Date(
+    year,
+    month - 1,
+    day
+  );
+
+  if (
+    Number.isNaN(date.getTime())
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function formatWeekLabel(
+  monday: Date
+) {
   const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
 
-  const startDay = monday.getDate();
-  const endDay = sunday.getDate();
+  sunday.setDate(
+    monday.getDate() + 6
+  );
 
-  const startMonth = monday.toLocaleDateString("es-ES", {
-    month: "long",
-  });
+  const startDay =
+    monday.getDate();
 
-  const endMonth = sunday.toLocaleDateString("es-ES", {
-    month: "long",
-  });
+  const endDay =
+    sunday.getDate();
 
-  if (monday.getMonth() === sunday.getMonth()) {
+  const startMonth =
+    monday.toLocaleDateString(
+      "es-ES",
+      {
+        month: "long",
+      }
+    );
+
+  const endMonth =
+    sunday.toLocaleDateString(
+      "es-ES",
+      {
+        month: "long",
+      }
+    );
+
+  if (
+    monday.getMonth() ===
+    sunday.getMonth()
+  ) {
     return `${startDay}–${endDay} ${endMonth}`;
   }
 
@@ -69,24 +121,48 @@ function formatWeekLabel(monday: Date) {
 }
 
 export default function HomePage() {
-  const { house } = useHouse();
+  const navigate = useNavigate();
 
-  if (!house) {
-    return null;
-  }
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams();
+
+  const { house } = useHouse();
 
   const currentMonday = useMemo(
     () => getMonday(new Date()),
     []
   );
 
-  const [selectedMonday, setSelectedMonday] =
-    useState<Date>(currentMonday);
+  const initialMonday = useMemo(() => {
+    const fromUrl =
+      dateFromWeekStart(
+        searchParams.get("week")
+      );
+
+    return (
+      fromUrl ?? currentMonday
+    );
+  }, []);
+
+  const [
+    selectedMonday,
+    setSelectedMonday,
+  ] = useState<Date>(
+    initialMonday
+  );
 
   const weekStart = useMemo(
-    () => formatWeekStart(selectedMonday),
+    () =>
+      formatWeekStart(
+        selectedMonday
+      ),
     [selectedMonday]
   );
+
+  const houseCode =
+    house?.code ?? "";
 
   const {
     weeklyMenu,
@@ -94,105 +170,180 @@ export default function HomePage() {
     loading,
     saving,
     errorMessage,
-    selectMeal,
     removeMeal,
     clearWeek,
-  } = useWeeklyMenu(house.code, weekStart);
+  } = useWeeklyMenu(
+    houseCode,
+    weekStart
+  );
 
   const {
     shoppingList,
     itemCount,
-  } = useShoppingList(selectedMeals);
-
-  const [selectedDay, setSelectedDay] =
-    useState<Day | null>(null);
-
-  const [selectedMealDetails, setSelectedMealDetails] =
-    useState<Meal | null>(null);
-
-  const [selectedMealDay, setSelectedMealDay] =
-    useState<Day | null>(null);
-
-  const [showShoppingList, setShowShoppingList] =
-    useState(false);
-
-  const weekLabel = useMemo(
-    () => formatWeekLabel(selectedMonday),
-    [selectedMonday]
+  } = useShoppingList(
+    selectedMeals
   );
 
-  const isCurrentWeek =
-    formatWeekStart(selectedMonday) ===
-    formatWeekStart(currentMonday);
+  const [
+    selectedMealDetails,
+    setSelectedMealDetails,
+  ] = useState<Meal | null>(
+    null
+  );
 
-  const mealsByDay = useMemo(() => {
-    return DAYS.map((day, index) => {
-      const date = new Date(selectedMonday);
-      date.setDate(
-        selectedMonday.getDate() + index
-      );
+  const [
+    selectedMealDay,
+    setSelectedMealDay,
+  ] = useState<Day | null>(
+    null
+  );
 
-      const mealId = weeklyMenu[day];
+  const [
+    showShoppingList,
+    setShowShoppingList,
+  ] = useState(false);
 
-      const meal = mealId
-        ? meals.find(
-            (item) => item.id === mealId
-          )
-        : undefined;
+  if (!house) {
+    return null;
+  }
 
-      return {
-        dayShort: shortDays[day],
-        dayNumber: String(date.getDate()),
-        meal,
-      };
-    });
-  }, [weeklyMenu, selectedMonday]);
-
-  function goToPreviousWeek() {
-    const previous = new Date(selectedMonday);
-
-    previous.setDate(
-      selectedMonday.getDate() - 7
+  const weekLabel =
+    formatWeekLabel(
+      selectedMonday
     );
 
-    setSelectedMonday(previous);
+  const isCurrentWeek =
+    formatWeekStart(
+      selectedMonday
+    ) ===
+    formatWeekStart(
+      currentMonday
+    );
+
+  const mealsByDay =
+    DAYS.map(
+      (day, index) => {
+        const date =
+          new Date(
+            selectedMonday
+          );
+
+        date.setDate(
+          selectedMonday.getDate() +
+            index
+        );
+
+        const mealId =
+          weeklyMenu[day];
+
+        const meal = mealId
+          ? meals.find(
+              (item) =>
+                item.id ===
+                mealId
+            )
+          : undefined;
+
+        return {
+          dayShort:
+            shortDays[day],
+          dayNumber: String(
+            date.getDate()
+          ),
+          meal,
+        };
+      }
+    );
+
+  function changeWeek(
+    monday: Date
+  ) {
+    setSelectedMonday(monday);
+
+    setSearchParams({
+      week: formatWeekStart(
+        monday
+      ),
+    });
+  }
+
+  function goToPreviousWeek() {
+    const previous =
+      new Date(
+        selectedMonday
+      );
+
+    previous.setDate(
+      previous.getDate() - 7
+    );
+
+    changeWeek(previous);
   }
 
   function goToNextWeek() {
-    const next = new Date(selectedMonday);
+    const next =
+      new Date(
+        selectedMonday
+      );
 
     next.setDate(
-      selectedMonday.getDate() + 7
+      next.getDate() + 7
     );
 
-    setSelectedMonday(next);
+    changeWeek(next);
   }
 
   function goToCurrentWeek() {
-    setSelectedMonday(currentMonday);
+    changeWeek(
+      currentMonday
+    );
   }
 
-  function handleDayClick(index: number) {
+  function openRecipeSelector(
+    day: Day
+  ) {
+    navigate(
+      `/choose?day=${encodeURIComponent(
+        day
+      )}&week=${weekStart}`
+    );
+  }
+
+  function handleDayClick(
+    index: number
+  ) {
     const day = DAYS[index];
-    const mealId = weeklyMenu[day];
+
+    const mealId =
+      weeklyMenu[day];
 
     if (!mealId) {
-      setSelectedDay(day);
+      openRecipeSelector(day);
       return;
     }
 
-    const meal = meals.find(
-      (item) => item.id === mealId
-    );
+    const meal =
+      meals.find(
+        (item) =>
+          item.id === mealId
+      );
 
     if (meal) {
-      setSelectedMealDay(day);
-      setSelectedMealDetails(meal);
+      setSelectedMealDay(
+        day
+      );
+
+      setSelectedMealDetails(
+        meal
+      );
     }
   }
 
   function closeMealDetails() {
-    setSelectedMealDetails(null);
+    setSelectedMealDetails(
+      null
+    );
+
     setSelectedMealDay(null);
   }
 
@@ -201,10 +352,12 @@ export default function HomePage() {
       return;
     }
 
-    const day = selectedMealDay;
+    const day =
+      selectedMealDay;
 
     closeMealDetails();
-    setSelectedDay(day);
+
+    openRecipeSelector(day);
   }
 
   async function removeCurrentMeal() {
@@ -212,16 +365,19 @@ export default function HomePage() {
       return;
     }
 
-    const day = selectedMealDay;
+    const day =
+      selectedMealDay;
 
     closeMealDetails();
+
     await removeMeal(day);
   }
 
   async function confirmClearWeek() {
-    const confirmed = window.confirm(
-      "¿Quieres borrar todo el menú de esta semana?"
-    );
+    const confirmed =
+      window.confirm(
+        "¿Quieres borrar todo el menú de esta semana?"
+      );
 
     if (!confirmed) {
       return;
@@ -232,121 +388,115 @@ export default function HomePage() {
 
   return (
     <AppShell>
-      <div className="px-6 pt-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#A08E80]">
-              Hogar
-            </p>
-
-            <p className="mt-1 font-serif text-[18px] font-semibold text-[#292923]">
-              {house.name}
-            </p>
-          </div>
-
-          <Link
-            to="/settings"
-            className="grid h-10 w-10 place-items-center rounded-full border border-[#E2D9CF] bg-white text-lg text-[#81766D] transition hover:bg-[#F6F1EB]"
-            aria-label="Abrir ajustes"
-          >
-            ⚙
-          </Link>
-        </div>
-      </div>
-
-      <Header
-        plannedCount={selectedMeals.length}
-        totalCount={7}
-        dateLabel=""
+      <HomeHeader
+        houseName={
+          house.name
+        }
+        shoppingCount={
+          itemCount
+        }
         onOpenShopping={() =>
-          setShowShoppingList(true)
+          setShowShoppingList(
+            true
+          )
         }
       />
 
       <WeekNavigator
         label={weekLabel}
-        isCurrentWeek={isCurrentWeek}
-        onPrevious={goToPreviousWeek}
-        onNext={goToNextWeek}
-        onToday={goToCurrentWeek}
-      />
-
-      <ProgressCard
-        plannedCount={selectedMeals.length}
+        plannedCount={
+          selectedMeals.length
+        }
         totalCount={7}
+        isCurrentWeek={
+          isCurrentWeek
+        }
+        onPrevious={
+          goToPreviousWeek
+        }
+        onNext={
+          goToNextWeek
+        }
+        onToday={
+          goToCurrentWeek
+        }
       />
 
       {errorMessage && (
-        <div className="mx-6 mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mx-5 mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
         </div>
       )}
 
       {loading ? (
-        <div className="px-6 py-12 text-center text-sm text-[#81766D]">
-          Cargando vuestro menú...
+        <div className="px-5 py-10 text-center text-sm text-[#81766D]">
+          Cargando vuestro
+          menú...
         </div>
       ) : (
         <MealList
-          mealsByDay={mealsByDay}
-          onSelectDay={handleDayClick}
+          mealsByDay={
+            mealsByDay
+          }
+          onSelectDay={
+            handleDayClick
+          }
         />
       )}
 
       <ShoppingSummary
         itemCount={itemCount}
         onClick={() =>
-          setShowShoppingList(true)
+          setShowShoppingList(
+            true
+          )
         }
       />
 
       {!loading &&
-        selectedMeals.length > 0 && (
-          <div className="px-6 pb-6">
+        selectedMeals.length >
+          0 && (
+          <div className="px-5 pb-5">
             <button
               type="button"
-              onClick={confirmClearWeek}
+              onClick={
+                confirmClearWeek
+              }
               disabled={saving}
-              className="w-full py-2 text-center text-xs font-medium text-[#9A8C82] transition hover:text-[#D96536] disabled:opacity-50"
+              className="w-full py-2 text-center text-[11px] font-medium text-[#A0968C] transition hover:text-[#D96536] disabled:opacity-50"
             >
               Vaciar semana
             </button>
           </div>
         )}
 
-      {selectedDay && (
-        <MealSelectorModal
-          day={selectedDay}
-          meals={meals}
-          onSelect={async (mealId) => {
-            await selectMeal(
-              selectedDay,
-              mealId
-            );
-
-            setSelectedDay(null);
-          }}
-          onClose={() =>
-            setSelectedDay(null)
-          }
-        />
-      )}
-
       {showShoppingList && (
         <ShoppingListModal
-          items={shoppingList}
+          items={
+            shoppingList
+          }
           onClose={() =>
-            setShowShoppingList(false)
+            setShowShoppingList(
+              false
+            )
           }
         />
       )}
 
       {selectedMealDetails && (
         <MealDetails
-          meal={selectedMealDetails}
-          onClose={closeMealDetails}
-          onChange={changeCurrentMeal}
-          onRemove={removeCurrentMeal}
+          meal={
+            selectedMealDetails
+          }
+          onClose={
+            closeMealDetails
+          }
+          onChange={
+            changeCurrentMeal
+          }
+          onRemove={
+            removeCurrentMeal
+          }
         />
       )}
     </AppShell>
