@@ -38,6 +38,7 @@ export default function HomeHeader({
             onClick={onOpenShopping}
             className="relative grid h-10 w-10 place-items-center rounded-full border border-[#E2D9CF] bg-[#FFFDFC] text-[#655E57] transition active:scale-95"
             aria-label="Lista de la compra"
+            title="Lista de la compra"
           >
             <svg
               width="19"
@@ -65,6 +66,7 @@ export default function HomeHeader({
             to="/settings"
             className="grid h-10 w-10 place-items-center rounded-full border border-[#E2D9CF] bg-[#FFFDFC] text-[#655E57] transition active:scale-95"
             aria-label="Ajustes"
+            title="Ajustes"
           >
             <svg
               width="19"

@@ -6,6 +6,7 @@ import {
 
 import AppShell from "../components/layout/AppShell";
 import HomeHeader from "../components/layout/HomeHeader";
+import FastingSummary from "../components/fasting/FastingSummary";
 import MealList from "../components/meals/MealList";
 import ShoppingSummary from "../components/shopping/ShoppingSummary";
 import WeekNavigator from "../components/navigation/WeekNavigator";
@@ -402,6 +403,8 @@ export default function HomePage() {
         }
       />
 
+      <FastingSummary />
+
       <WeekNavigator
         label={weekLabel}
         plannedCount={
@@ -430,8 +433,7 @@ export default function HomePage() {
 
       {loading ? (
         <div className="px-5 py-10 text-center text-sm text-[#81766D]">
-          Cargando vuestro
-          menú...
+          Cargando vuestro menú...
         </div>
       ) : (
         <MealList

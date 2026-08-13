@@ -9,6 +9,7 @@ import { useHouse } from "./context/HouseContext";
 import HomePage from "./pages/HomePage";
 import WelcomePage from "./pages/WelcomePage";
 import RecipeSelectionPage from "./pages/RecipeSelectionPage";
+import FastingPage from "./pages/FastingPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 
 export default function App() {
@@ -28,6 +29,11 @@ export default function App() {
       <Route
         path="/choose"
         element={<RecipeSelectionPage />}
+      />
+
+      <Route
+        path="/fasting"
+        element={<FastingPage />}
       />
 
       <Route
