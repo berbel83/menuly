@@ -22,6 +22,7 @@ import {
   getNotificationPermission,
   notificationsSupported,
   requestNotificationPermission,
+  subscribeToPush,
 } from "../services/notificationService";
 
 function formatClock(date: Date) {
@@ -90,6 +91,11 @@ export default function FastingPage() {
     requestingNotifications,
     setRequestingNotifications,
   ] = useState(false);
+
+  const [
+    notificationError,
+    setNotificationError,
+  ] = useState<string | null>(null);
 
   useEffect(() => {
     setSettings(
@@ -217,15 +223,25 @@ export default function FastingPage() {
         true
       );
 
+      setNotificationError(null);
+
       const permission =
         await requestNotificationPermission();
 
       setNotificationPermission(
         permission
       );
-    } catch {
-      setNotificationPermission(
-        "unsupported"
+
+      if (permission !== "granted") {
+        return;
+      }
+
+      await subscribeToPush();
+    } catch (error) {
+      setNotificationError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo activar las notificaciones."
       );
     } finally {
       setRequestingNotifications(
@@ -340,6 +356,12 @@ export default function FastingPage() {
                           : "Activar notificaciones"}
                       </button>
                     </>
+                  )}
+
+                  {notificationError && (
+                    <p className="mt-3 text-xs leading-5 text-red-600">
+                      {notificationError}
+                    </p>
                   )}
                 </div>
               </div>
