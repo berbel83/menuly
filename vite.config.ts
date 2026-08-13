@@ -10,6 +10,11 @@ export default defineConfig({
     tailwindcss(),
 
     VitePWA({
+      strategies: "injectManifest",
+
+      srcDir: "src",
+      filename: "sw.ts",
+
       registerType: "autoUpdate",
 
       includeAssets: [
@@ -53,6 +58,12 @@ export default defineConfig({
             type: "image/png",
             purpose: "maskable",
           },
+        ],
+      },
+
+      injectManifest: {
+        globPatterns: [
+          "**/*.{js,css,html,ico,png,svg,webmanifest}",
         ],
       },
     }),
