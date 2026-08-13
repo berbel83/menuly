@@ -6,6 +6,8 @@ import {
 
 import { useHouse } from "./context/HouseContext";
 
+import PushBootstrap from "./components/notifications/PushBootstrap";
+
 import HomePage from "./pages/HomePage";
 import WelcomePage from "./pages/WelcomePage";
 import RecipeSelectionPage from "./pages/RecipeSelectionPage";
@@ -20,36 +22,40 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={<HomePage />}
-      />
+    <>
+      <PushBootstrap />
 
-      <Route
-        path="/choose"
-        element={<RecipeSelectionPage />}
-      />
+      <Routes>
+        <Route
+          path="/"
+          element={<HomePage />}
+        />
 
-      <Route
-        path="/fasting"
-        element={<FastingPage />}
-      />
+        <Route
+          path="/choose"
+          element={<RecipeSelectionPage />}
+        />
 
-      <Route
-        path="/settings"
-        element={<SettingsPage />}
-      />
+        <Route
+          path="/fasting"
+          element={<FastingPage />}
+        />
 
-      <Route
-        path="*"
-        element={
-          <Navigate
-            to="/"
-            replace
-          />
-        }
-      />
-    </Routes>
+        <Route
+          path="/settings"
+          element={<SettingsPage />}
+        />
+
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
+        />
+      </Routes>
+    </>
   );
 }
