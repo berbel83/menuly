@@ -18,6 +18,12 @@ import {
   type FastingSettings,
 } from "../services/fastingService";
 
+import {
+  getNotificationPermission,
+  notificationsSupported,
+  requestNotificationPermission,
+} from "../services/notificationService";
+
 function formatClock(date: Date) {
   return date.toLocaleTimeString("es-ES", {
     hour: "2-digit",
@@ -55,6 +61,12 @@ function formatDuration(milliseconds: number) {
   };
 }
 
+type NotificationState =
+  | "granted"
+  | "denied"
+  | "default"
+  | "unsupported";
+
 export default function FastingPage() {
   const [settings, setSettings] =
     useState<FastingSettings>(
@@ -69,6 +81,16 @@ export default function FastingPage() {
   const [now, setNow] =
     useState(new Date());
 
+  const [
+    notificationPermission,
+    setNotificationPermission,
+  ] = useState<NotificationState>("default");
+
+  const [
+    requestingNotifications,
+    setRequestingNotifications,
+  ] = useState(false);
+
   useEffect(() => {
     setSettings(
       loadFastingSettings()
@@ -76,6 +98,13 @@ export default function FastingPage() {
 
     setActiveFast(
       loadActiveFast()
+    );
+
+    const permission =
+      getNotificationPermission();
+
+    setNotificationPermission(
+      permission
     );
   }, []);
 
@@ -174,6 +203,37 @@ export default function FastingPage() {
     );
   }
 
+  async function handleEnableNotifications() {
+    if (!notificationsSupported()) {
+      setNotificationPermission(
+        "unsupported"
+      );
+
+      return;
+    }
+
+    try {
+      setRequestingNotifications(
+        true
+      );
+
+      const permission =
+        await requestNotificationPermission();
+
+      setNotificationPermission(
+        permission
+      );
+    } catch {
+      setNotificationPermission(
+        "unsupported"
+      );
+    } finally {
+      setRequestingNotifications(
+        false
+      );
+    }
+  }
+
   function handleStartFast() {
     const fast = startFast(
       fastingHours
@@ -223,6 +283,78 @@ export default function FastingPage() {
         </header>
 
         <main className="px-5 py-5">
+          {notificationPermission !== "granted" && (
+            <section className="mb-5 rounded-[22px] border border-[#DDE3D6] bg-[#F6F8F3] p-4">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#E7EDE1] text-[#627353]">
+                  <svg
+                    width="19"
+                    height="19"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="font-serif text-[18px] font-semibold text-[#30342D]">
+                    Avisos de ayuno
+                  </p>
+
+                  {notificationPermission === "denied" ? (
+                    <p className="mt-1 text-xs leading-5 text-[#81766D]">
+                      Las notificaciones están bloqueadas.
+                      Tendrás que activarlas desde los ajustes
+                      del navegador o del teléfono.
+                    </p>
+                  ) : notificationPermission === "unsupported" ? (
+                    <p className="mt-1 text-xs leading-5 text-[#81766D]">
+                      Este dispositivo o navegador no permite
+                      usar las notificaciones de Compausa.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mt-1 text-xs leading-5 text-[#81766D]">
+                        Actívalas para que Compausa pueda
+                        avisarte cuando completes tu ayuno.
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={
+                          handleEnableNotifications
+                        }
+                        disabled={
+                          requestingNotifications
+                        }
+                        className="mt-3 rounded-xl bg-[#3F543E] px-4 py-2.5 text-xs font-bold text-white transition active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {requestingNotifications
+                          ? "Activando..."
+                          : "Activar notificaciones"}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {notificationPermission === "granted" && (
+            <div className="mb-5 flex items-center gap-2 rounded-xl bg-[#EEF3E9] px-3 py-2.5 text-xs font-semibold text-[#667956]">
+              <span>✓</span>
+              <span>
+                Notificaciones activadas
+              </span>
+            </div>
+          )}
+
           {!activeFast ? (
             <>
               <section className="rounded-[24px] border border-[#E3D9CE] bg-[#FFFDFC] p-5 shadow-[0_8px_25px_rgba(80,60,42,0.05)]">
@@ -255,7 +387,7 @@ export default function FastingPage() {
                         }
                         className={`rounded-2xl px-3 py-3 text-sm font-semibold transition ${
                           active
-                            ? "bg-[#D96536] text-white"
+                            ? "bg-[#E86632] text-white"
                             : "border border-[#E2D9CF] bg-[#FBF8F3] text-[#6F675F]"
                         }`}
                       >
@@ -335,7 +467,9 @@ export default function FastingPage() {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-white/70">
-                  Compausa guardará la hora exacta de inicio y calculará automáticamente cuándo termina tu ayuno.
+                  Compausa guardará la hora exacta de inicio
+                  y calculará automáticamente cuándo termina
+                  tu ayuno.
                 </p>
 
                 <button
@@ -343,7 +477,7 @@ export default function FastingPage() {
                   onClick={
                     handleStartFast
                   }
-                  className="mt-5 w-full rounded-2xl bg-[#D96536] px-4 py-4 text-sm font-bold text-white transition active:scale-[0.99]"
+                  className="mt-5 w-full rounded-2xl bg-[#E86632] px-4 py-4 text-sm font-bold text-white transition active:scale-[0.99]"
                 >
                   Empezar a ayunar ahora
                 </button>
@@ -368,7 +502,7 @@ export default function FastingPage() {
                       className={`text-[10px] font-bold uppercase tracking-[0.18em] ${
                         completed
                           ? "text-[#6F845A]"
-                          : "text-[#D96536]"
+                          : "text-[#E86632]"
                       }`}
                     >
                       {completed
@@ -385,7 +519,7 @@ export default function FastingPage() {
                     className={`grid h-12 w-12 place-items-center rounded-full text-lg ${
                       completed
                         ? "bg-[#DCE6D2] text-[#60764C]"
-                        : "bg-[#F4E5DD] text-[#D96536]"
+                        : "bg-[#F4E5DD] text-[#E86632]"
                     }`}
                   >
                     {completed
@@ -400,7 +534,7 @@ export default function FastingPage() {
                       className={`h-full rounded-full transition-all duration-1000 ${
                         completed
                           ? "bg-[#7A8B65]"
-                          : "bg-[#D96536]"
+                          : "bg-[#E86632]"
                       }`}
                       style={{
                         width: `${progress * 100}%`,
