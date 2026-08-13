@@ -11,29 +11,60 @@ interface ShoppingListModalProps {
 }
 
 function normalizeCategory(name: string) {
-  const value = name.toLowerCase();
+  const value = name
+    .toLowerCase()
+    .trim();
 
+  // DESPENSA
+  // Debe comprobarse antes que carne/pescado,
+  // porque "caldo de pollo" contiene "pollo".
   if (
+    value.includes("caldo") ||
+    value.includes("arroz") ||
+    value.includes("pasta") ||
+    value.includes("espagueti") ||
+    value.includes("macarr") ||
+    value.includes("lasaña") ||
+    value.includes("pan ") ||
+    value === "pan" ||
+    value.includes("pan de") ||
+    value.includes("tortita") ||
+    value.includes("harina") ||
+    value.includes("pan rallado") ||
+    value.includes("aceite") ||
+    value.includes("tomate frito") ||
+    value.includes("mayonesa") ||
+    value.includes("curry") ||
+    value.includes("base de pizza")
+  ) {
+    return "Despensa";
+  }
+
+  // CARNICERÍA
+  if (
+    value.includes("pechuga") ||
     value.includes("pollo") ||
     value.includes("pavo") ||
     value.includes("ternera") ||
-    value.includes("carne") ||
-    value.includes("hamburguesa")
+    value.includes("carne picada") ||
+    value.includes("filete")
   ) {
     return "Carnicería";
   }
 
+  // PESCADERÍA
   if (
     value.includes("salmón") ||
     value.includes("atún") ||
     value.includes("merluza") ||
-    value.includes("gamb") ||
+    value.includes("gamba") ||
     value.includes("boquer") ||
     value.includes("calamar")
   ) {
     return "Pescadería";
   }
 
+  // FRUTA Y VERDURA
   if (
     value.includes("lechuga") ||
     value.includes("zanahoria") ||
@@ -42,11 +73,16 @@ function normalizeCategory(name: string) {
     value.includes("patata") ||
     value.includes("ajo") ||
     value.includes("limón") ||
-    value.includes("plátano")
+    value.includes("plátano") ||
+    value.includes("cebolla") ||
+    value.includes("tomate") ||
+    value.includes("pepino") ||
+    value.includes("pimiento")
   ) {
     return "Fruta y verdura";
   }
 
+  // LÁCTEOS
   if (
     value.includes("queso") ||
     value.includes("leche") ||
@@ -55,24 +91,12 @@ function normalizeCategory(name: string) {
     return "Lácteos";
   }
 
+  // HUEVOS
   if (
-    value.includes("arroz") ||
-    value.includes("pasta") ||
-    value.includes("espagueti") ||
-    value.includes("macarr") ||
-    value.includes("pan") ||
-    value.includes("tortita") ||
-    value.includes("harina") ||
-    value.includes("aceite") ||
-    value.includes("tomate frito") ||
-    value.includes("caldo") ||
-    value.includes("mayonesa") ||
-    value.includes("curry")
+    value === "huevo" ||
+    value === "huevos" ||
+    value.includes("huevo")
   ) {
-    return "Despensa";
-  }
-
-  if (value.includes("huevo")) {
     return "Huevos";
   }
 
@@ -93,9 +117,10 @@ export default function ShoppingListModal({
   items,
   onClose,
 }: ShoppingListModalProps) {
-  const [checkedItems, setCheckedItems] = useState<
-    Set<string>
-  >(new Set());
+  const [checkedItems, setCheckedItems] =
+    useState<Set<string>>(
+      new Set()
+    );
 
   const groupedItems = useMemo(() => {
     const groups = new Map<
@@ -104,9 +129,10 @@ export default function ShoppingListModal({
     >();
 
     for (const item of items) {
-      const category = normalizeCategory(
-        item.name
-      );
+      const category =
+        normalizeCategory(
+          item.name
+        );
 
       const current =
         groups.get(category) ?? [];
@@ -123,7 +149,8 @@ export default function ShoppingListModal({
       .map((category) => ({
         category,
         items:
-          groups.get(category) ?? [],
+          groups.get(category) ??
+          [],
       }))
       .filter(
         (group) =>
@@ -137,14 +164,22 @@ export default function ShoppingListModal({
   const totalCount =
     items.length;
 
+  function getItemKey(
+    item: ShoppingItem
+  ) {
+    return `${item.name}-${item.quantity}`;
+  }
+
   function toggleItem(
     item: ShoppingItem
   ) {
-    const key = `${item.name}-${item.quantity}`;
+    const key =
+      getItemKey(item);
 
     setCheckedItems(
       (current) => {
-        const next = new Set(current);
+        const next =
+          new Set(current);
 
         if (next.has(key)) {
           next.delete(key);
@@ -161,12 +196,14 @@ export default function ShoppingListModal({
     item: ShoppingItem
   ) {
     return checkedItems.has(
-      `${item.name}-${item.quantity}`
+      getItemKey(item)
     );
   }
 
   function clearChecked() {
-    setCheckedItems(new Set());
+    setCheckedItems(
+      new Set()
+    );
   }
 
   return (
@@ -184,7 +221,8 @@ export default function ShoppingListModal({
               </h2>
 
               <p className="mt-1 text-sm text-[#81766D]">
-                {checkedCount} de {totalCount} comprados
+                {checkedCount} de{" "}
+                {totalCount} comprados
               </p>
             </div>
 
@@ -232,7 +270,9 @@ export default function ShoppingListModal({
               </p>
 
               <p className="mt-2 text-sm text-[#938A82]">
-                Añade comidas a la semana para generar la compra.
+                Añade comidas a la
+                semana para generar la
+                compra.
               </p>
             </div>
           ) : (
@@ -242,79 +282,95 @@ export default function ShoppingListModal({
                   const pendingItems =
                     group.items.filter(
                       (item) =>
-                        !isChecked(item)
+                        !isChecked(
+                          item
+                        )
                     );
 
                   const completedItems =
                     group.items.filter(
                       (item) =>
-                        isChecked(item)
+                        isChecked(
+                          item
+                        )
                     );
 
                   return (
                     <section
-                      key={group.category}
+                      key={
+                        group.category
+                      }
                       className="py-4"
                     >
                       <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#A19589]">
-                        {group.category}
+                        {
+                          group.category
+                        }
                       </p>
 
                       <div className="border-t border-[#E7DFD6]">
                         {[
                           ...pendingItems,
                           ...completedItems,
-                        ].map((item) => {
-                          const checked =
-                            isChecked(
-                              item
-                            );
+                        ].map(
+                          (item) => {
+                            const checked =
+                              isChecked(
+                                item
+                              );
 
-                          return (
-                            <button
-                              key={`${item.name}-${item.quantity}`}
-                              type="button"
-                              onClick={() =>
-                                toggleItem(
+                            return (
+                              <button
+                                key={getItemKey(
                                   item
-                                )
-                              }
-                              className="flex w-full items-center gap-3 border-b border-[#E7DFD6] py-3 text-left transition hover:bg-[#F8F3ED]"
-                            >
-                              <div
-                                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-bold transition ${
-                                  checked
-                                    ? "border-[#7A8B65] bg-[#7A8B65] text-white"
-                                    : "border-[#CFC5BA] bg-[#FFFDFC] text-transparent"
-                                }`}
+                                )}
+                                type="button"
+                                onClick={() =>
+                                  toggleItem(
+                                    item
+                                  )
+                                }
+                                className="flex w-full items-center gap-3 border-b border-[#E7DFD6] py-3 text-left transition hover:bg-[#F8F3ED]"
                               >
-                                ✓
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <p
-                                  className={`truncate text-[14px] font-medium transition ${
+                                <div
+                                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-bold transition ${
                                     checked
-                                      ? "text-[#AAA197] line-through"
-                                      : "text-[#3A3732]"
+                                      ? "border-[#7A8B65] bg-[#7A8B65] text-white"
+                                      : "border-[#CFC5BA] bg-[#FFFDFC] text-transparent"
                                   }`}
                                 >
-                                  {item.name}
-                                </p>
-                              </div>
+                                  ✓
+                                </div>
 
-                              <span
-                                className={`shrink-0 text-sm transition ${
-                                  checked
-                                    ? "text-[#B8B0A7] line-through"
-                                    : "font-medium text-[#746B63]"
-                                }`}
-                              >
-                                {item.quantity}
-                              </span>
-                            </button>
-                          );
-                        })}
+                                <div className="min-w-0 flex-1">
+                                  <p
+                                    className={`truncate text-[14px] font-medium transition ${
+                                      checked
+                                        ? "text-[#AAA197] line-through"
+                                        : "text-[#3A3732]"
+                                    }`}
+                                  >
+                                    {
+                                      item.name
+                                    }
+                                  </p>
+                                </div>
+
+                                <span
+                                  className={`shrink-0 text-sm transition ${
+                                    checked
+                                      ? "text-[#B8B0A7] line-through"
+                                      : "font-medium text-[#746B63]"
+                                  }`}
+                                >
+                                  {
+                                    item.quantity
+                                  }
+                                </span>
+                              </button>
+                            );
+                          }
+                        )}
                       </div>
                     </section>
                   );

@@ -134,7 +134,17 @@ export default function RecipeSelectionPage() {
             />
           </div>
 
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <div
+            className="
+              mt-3
+              flex
+              gap-2
+              overflow-x-auto
+              pb-1
+              [scrollbar-width:none]
+              [&::-webkit-scrollbar]:hidden
+            "
+          >
             {categories.map((item) => {
               const active = category === item;
 
@@ -189,32 +199,36 @@ export default function RecipeSelectionPage() {
                   onClick={() =>
                     chooseMeal(meal.id)
                   }
-                  className="group flex w-full items-center gap-3 border-b border-[#E7DFD6] py-3 text-left transition hover:bg-[#F8F3ED] disabled:opacity-60"
+                  className="group flex w-full items-center gap-3 border-b border-[#E7DFD6] py-3.5 text-left transition hover:bg-[#F8F3ED] disabled:opacity-60"
                 >
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#F1E8DE]">
-                    <div className="h-3 w-3 rounded-full bg-[#D96536]" />
-                  </div>
-
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-serif text-[16px] font-semibold text-[#272720]">
+                    <p className="truncate font-serif text-[17px] font-semibold leading-tight text-[#272720]">
                       {meal.name}
                     </p>
 
-                    <div className="mt-1 flex items-center gap-2 text-[11px] text-[#8B8178]">
-                      <span>{meal.cookingTime} min</span>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#8B8178]">
+                      <span>
+                        {meal.cookingTime} min
+                      </span>
+
                       <span>·</span>
-                      <span>{meal.category}</span>
+
+                      <span>
+                        {meal.category}
+                      </span>
 
                       {meal.airFryer && (
                         <>
                           <span>·</span>
-                          <span>Air Fryer</span>
+                          <span className="font-medium text-[#7A8B65]">
+                            Air Fryer
+                          </span>
                         </>
                       )}
                     </div>
                   </div>
 
-                  <span className="text-[25px] font-light text-[#B4AAA0] transition group-hover:translate-x-0.5">
+                  <span className="shrink-0 text-[25px] font-light text-[#B4AAA0] transition group-hover:translate-x-0.5">
                     ›
                   </span>
                 </button>
