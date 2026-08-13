@@ -213,7 +213,7 @@ export default function FastingPage() {
 
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7A8B65]">
-              Menuly
+              Compausa
             </p>
 
             <h1 className="mt-0.5 font-serif text-[28px] font-semibold tracking-[-0.03em] text-[#25251F]">
@@ -335,7 +335,7 @@ export default function FastingPage() {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-white/70">
-                  Menuly guardará la hora exacta de inicio y calculará automáticamente cuándo termina tu ayuno.
+                  Compausa guardará la hora exacta de inicio y calculará automáticamente cuándo termina tu ayuno.
                 </p>
 
                 <button

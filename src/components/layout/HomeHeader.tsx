@@ -16,13 +16,17 @@ export default function HomeHeader({
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#D96536] font-serif text-lg font-semibold text-white">
-              M
+            <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-[#E3D9CE] bg-[#FBF8F3]">
+              <img
+                src="/pwa-192x192.png"
+                alt=""
+                className="h-full w-full object-cover"
+              />
             </div>
 
             <div className="min-w-0">
-              <p className="font-serif text-[21px] font-semibold leading-none tracking-[-0.03em] text-[#25251F]">
-                menuly
+              <p className="font-serif text-[21px] font-semibold leading-none tracking-[-0.03em] text-[#3F543E]">
+                compausa
               </p>
 
               <p className="mt-1 truncate text-[11px] font-medium text-[#92877D]">
@@ -56,7 +60,7 @@ export default function HomeHeader({
             </svg>
 
             {shoppingCount > 0 && (
-              <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-[#D96536] px-1 text-[10px] font-bold text-white">
+              <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-[#E86632] px-1 text-[10px] font-bold text-white">
                 {shoppingCount > 99 ? "99+" : shoppingCount}
               </span>
             )}

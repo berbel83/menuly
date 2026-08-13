@@ -52,8 +52,8 @@ export default function SettingsPage() {
           </Link>
 
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#A08E80]">
-              Menuly
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F543E]">
+              Compausa
             </p>
 
             <h1 className="mt-0.5 font-serif text-[28px] font-semibold tracking-[-0.03em]">
@@ -64,7 +64,7 @@ export default function SettingsPage() {
 
         <div className="px-6 py-6">
           <section className="rounded-[24px] border border-[#E3D9CE] bg-[#FFFDFC] p-5 shadow-[0_8px_25px_rgba(80,60,42,0.05)]">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#D96536]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#E86632]">
               Tu hogar
             </p>
 
@@ -84,7 +84,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={copyCode}
-                className="shrink-0 rounded-xl bg-[#D96536] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#C7592D]"
+                className="shrink-0 rounded-xl bg-[#E86632] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#D85B29]"
               >
                 {copied ? "Copiado ✓" : "Copiar"}
               </button>
@@ -106,7 +106,7 @@ export default function SettingsPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-[#81766D]">
-              Menuly olvidará este hogar en este dispositivo
+              Compausa olvidará este hogar en este dispositivo
               y volverá a mostrar la pantalla para crear uno
               o introducir otro código.
             </p>
@@ -122,7 +122,7 @@ export default function SettingsPage() {
 
           <section className="mt-5 px-1">
             <p className="text-center text-xs text-[#A49A90]">
-              Menuly · versión inicial
+              Compausa · versión inicial
             </p>
           </section>
         </div>
