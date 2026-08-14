@@ -17,87 +17,157 @@ import {
   scheduleFastCompletedNotification,
 } from "../../services/fastingNotificationService";
 
+import {
+  saveFastingHistory,
+} from "../../services/fastingHistoryService";
+
 function formatRemaining(milliseconds: number) {
   const totalMinutes = Math.max(
     0,
     Math.ceil(milliseconds / 1000 / 60)
   );
 
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
+  const hours = Math.floor(
+    totalMinutes / 60
+  );
 
-  return { hours, minutes };
+  const minutes =
+    totalMinutes % 60;
+
+  return {
+    hours,
+    minutes,
+  };
 }
 
 function formatTime(value: string) {
-  return new Date(value).toLocaleTimeString("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date(
+    value
+  ).toLocaleTimeString(
+    "es-ES",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  );
 }
 
 export default function FastingSummary() {
-  const [activeFast, setActiveFast] =
-    useState<ActiveFast | null>(() => loadActiveFast());
+  const [
+    activeFast,
+    setActiveFast,
+  ] =
+    useState<ActiveFast | null>(
+      () => loadActiveFast()
+    );
 
-  const [now, setNow] =
-    useState(() => new Date());
+  const [
+    now,
+    setNow,
+  ] =
+    useState(
+      () => new Date()
+    );
 
-  const [actionError, setActionError] =
-    useState<string | null>(null);
+  const [
+    actionError,
+    setActionError,
+  ] =
+    useState<string | null>(
+      null
+    );
 
-  const [actionLoading, setActionLoading] =
+  const [
+    actionLoading,
+    setActionLoading,
+  ] =
     useState(false);
 
-  const settings = useMemo(
-    () => loadFastingSettings(),
-    [activeFast]
-  );
+  const settings =
+    useMemo(
+      () =>
+        loadFastingSettings(),
+      [activeFast]
+    );
 
   useEffect(() => {
     if (!activeFast) {
       return;
     }
 
-    const interval = window.setInterval(() => {
-      setNow(new Date());
-    }, 1000);
+    const interval =
+      window.setInterval(() => {
+        setNow(
+          new Date()
+        );
+      }, 1000);
 
     return () => {
-      window.clearInterval(interval);
+      window.clearInterval(
+        interval
+      );
     };
   }, [activeFast]);
 
-  const fastingHours = activeFast
-    ? activeFast.fastingHours
-    : getFastingHours(settings);
+  const fastingHours =
+    activeFast
+      ? activeFast.fastingHours
+      : getFastingHours(
+          settings
+        );
 
-  const progress = activeFast
-    ? getFastProgress(activeFast, now)
-    : 0;
+  const progress =
+    activeFast
+      ? getFastProgress(
+          activeFast,
+          now
+        )
+      : 0;
 
-  const remaining = activeFast
-    ? formatRemaining(
-        getRemainingMilliseconds(activeFast, now)
-      )
-    : null;
+  const remaining =
+    activeFast
+      ? formatRemaining(
+          getRemainingMilliseconds(
+            activeFast,
+            now
+          )
+        )
+      : null;
 
   const completed =
     activeFast !== null &&
-    new Date(activeFast.targetEndAt).getTime() <= now.getTime();
+    new Date(
+      activeFast.targetEndAt
+    ).getTime() <=
+      now.getTime();
 
   async function handleStartNow() {
     try {
-      setActionLoading(true);
-      setActionError(null);
+      setActionLoading(
+        true
+      );
 
-      const fast = startFast(fastingHours);
+      setActionError(
+        null
+      );
 
-      setActiveFast(fast);
-      setNow(new Date());
+      const fast =
+        startFast(
+          fastingHours
+        );
+
+      setActiveFast(
+        fast
+      );
+
+      setNow(
+        new Date()
+      );
 
       try {
-        await scheduleFastCompletedNotification(fast);
+        await scheduleFastCompletedNotification(
+          fast
+        );
       } catch (error) {
         console.error(
           "No se pudo programar la notificación de fin de ayuno:",
@@ -109,25 +179,70 @@ export default function FastingSummary() {
         );
       }
     } finally {
-      setActionLoading(false);
+      setActionLoading(
+        false
+      );
     }
   }
 
   async function handleStopFast() {
-    const confirmed = window.confirm(
-      completed
-        ? "¿Quieres finalizar este ayuno?"
-        : "¿Quieres terminar el ayuno antes de tiempo?"
-    );
+    if (!activeFast) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        completed
+          ? "¿Quieres finalizar este ayuno?"
+          : "¿Quieres terminar el ayuno antes de tiempo?"
+      );
 
     if (!confirmed) {
       return;
     }
 
     try {
-      setActionLoading(true);
-      setActionError(null);
+      setActionLoading(
+        true
+      );
 
+      setActionError(
+        null
+      );
+
+      const endedAt =
+        new Date();
+
+      /*
+       * Guardamos primero el historial.
+       * Si esto falla, no borramos el ayuno
+       * activo para evitar perder la sesión.
+       */
+      try {
+        await saveFastingHistory(
+          activeFast,
+          endedAt
+        );
+      } catch (error) {
+        console.error(
+          "No se pudo guardar el historial de ayuno:",
+          error
+        );
+
+        setActionError(
+          error instanceof Error
+            ? error.message
+            : "No se pudo guardar este ayuno en el historial."
+        );
+
+        return;
+      }
+
+      /*
+       * Una vez guardada la sesión,
+       * cancelamos cualquier aviso
+       * de finalización que siga pendiente.
+       */
       try {
         await cancelFastCompletedNotification();
       } catch (error) {
@@ -135,17 +250,24 @@ export default function FastingSummary() {
           "No se pudo cancelar la notificación pendiente:",
           error
         );
-
-        setActionError(
-          "El ayuno se ha detenido, pero no se pudo cancelar el aviso pendiente."
-        );
       }
 
+      /*
+       * Por último cerramos el ayuno local.
+       */
       stopFast();
-      setActiveFast(null);
-      setNow(new Date());
+
+      setActiveFast(
+        null
+      );
+
+      setNow(
+        new Date()
+      );
     } finally {
-      setActionLoading(false);
+      setActionLoading(
+        false
+      );
     }
   }
 
@@ -178,8 +300,12 @@ export default function FastingSummary() {
 
           <button
             type="button"
-            onClick={handleStartNow}
-            disabled={actionLoading}
+            onClick={
+              handleStartNow
+            }
+            disabled={
+              actionLoading
+            }
             className="shrink-0 rounded-xl bg-[#E86632] px-4 py-2.5 text-xs font-bold text-white transition active:scale-[0.97] disabled:opacity-50"
           >
             {actionLoading
@@ -229,7 +355,8 @@ export default function FastingSummary() {
               </p>
             ) : (
               <p className="mt-1 font-serif text-[21px] font-semibold text-[#292923]">
-                Faltan {remaining?.hours ?? 0} h{" "}
+                Faltan{" "}
+                {remaining?.hours ?? 0} h{" "}
                 {remaining?.minutes ?? 0} min
               </p>
             )}
@@ -271,8 +398,12 @@ export default function FastingSummary() {
       <div className="mt-3 border-t border-[#EAE3DA] pt-3">
         <button
           type="button"
-          onClick={handleStopFast}
-          disabled={actionLoading}
+          onClick={
+            handleStopFast
+          }
+          disabled={
+            actionLoading
+          }
           className={`w-full rounded-xl px-3 py-2.5 text-xs font-semibold transition active:scale-[0.99] disabled:opacity-50 ${
             completed
               ? "bg-[#7A8B65] text-white"
@@ -280,7 +411,7 @@ export default function FastingSummary() {
           }`}
         >
           {actionLoading
-            ? "Procesando..."
+            ? "Guardando..."
             : completed
             ? "Finalizar ayuno"
             : "Terminar ayuno"}

@@ -31,6 +31,10 @@ import {
 } from "../services/fastingNotificationService";
 
 import {
+  saveFastingHistory,
+} from "../services/fastingHistoryService";
+
+import {
   cancelStartReminder,
   scheduleStartReminder,
 } from "../services/startReminderService";
@@ -538,6 +542,10 @@ export default function FastingPage() {
   }
 
   async function handleStopFast() {
+    if (!activeFast) {
+      return;
+    }
+
     const confirmed =
       window.confirm(
         completed
@@ -557,6 +565,29 @@ export default function FastingPage() {
       setFastingActionError(
         null
       );
+
+      const endedAt =
+        new Date();
+
+      try {
+        await saveFastingHistory(
+          activeFast,
+          endedAt
+        );
+      } catch (error) {
+        console.error(
+          "No se pudo guardar el historial de ayuno:",
+          error
+        );
+
+        setFastingActionError(
+          error instanceof Error
+            ? error.message
+            : "No se pudo guardar este ayuno en el historial."
+        );
+
+        return;
+      }
 
       try {
         await cancelFastCompletedNotification();
