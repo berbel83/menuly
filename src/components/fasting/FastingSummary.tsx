@@ -233,14 +233,6 @@ export default function FastingSummary() {
         return;
       }
 
-      /*
-       * Avisamos al resto de componentes
-       * de que el historial ha cambiado.
-       *
-       * FastingWeekProgress escucha este evento
-       * y vuelve a cargar los datos de Supabase
-       * inmediatamente.
-       */
       window.dispatchEvent(
         new Event(
           "fasting-history-updated"
@@ -274,30 +266,56 @@ export default function FastingSummary() {
 
   if (!activeFast) {
     return (
-      <section className="mx-5 mb-4 rounded-[22px] border border-[#E3D9CE] bg-[#FFFDFC] px-4 py-4 shadow-[0_6px_20px_rgba(80,60,42,0.04)]">
-        <div className="flex items-center justify-between gap-4">
-          <Link
-            to="/fasting"
-            className="min-w-0 flex-1"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#7A8B65]">
-                Ayuno
-              </span>
+      <section className="mx-5 mb-5 overflow-hidden rounded-[26px] bg-[#F5E5DC] shadow-[0_12px_30px_rgba(84,65,48,0.08)]">
+        <div className="px-5 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <Link
+              to="/fasting"
+              className="min-w-0 flex-1"
+            >
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-[#E86632] text-white">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="9"
+                    />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                </span>
 
-              <span className="rounded-full bg-[#EEF1E9] px-2 py-0.5 text-[10px] font-bold text-[#70805F]">
-                {fastingHours} h
-              </span>
-            </div>
+                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#B85B36]">
+                  Ayuno
+                </span>
+              </div>
 
-            <p className="mt-1 font-serif text-[18px] font-semibold text-[#292923]">
-              No estás ayunando
-            </p>
+              <p className="mt-3 font-serif text-[23px] font-semibold tracking-[-0.03em] text-[#2F332C]">
+                Hoy todavía no has empezado
+              </p>
 
-            <p className="mt-0.5 text-xs text-[#92877D]">
-              Toca para cambiar tu protocolo
-            </p>
-          </Link>
+              <p className="mt-1 text-sm leading-6 text-[#85776C]">
+                Tu objetivo actual es de{" "}
+                <strong className="text-[#536B4A]">
+                  {fastingHours} horas
+                </strong>
+                .
+              </p>
+            </Link>
+
+            <span className="rounded-full bg-white/70 px-3 py-1.5 text-[11px] font-bold text-[#536B4A] shadow-sm">
+              {fastingHours} h
+            </span>
+          </div>
 
           <button
             type="button"
@@ -307,122 +325,187 @@ export default function FastingSummary() {
             disabled={
               actionLoading
             }
-            className="shrink-0 rounded-xl bg-[#E86632] px-4 py-2.5 text-xs font-bold text-white transition active:scale-[0.97] disabled:opacity-50"
+            className="mt-5 w-full rounded-2xl bg-[#E86632] px-4 py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(232,102,50,0.22)] transition active:scale-[0.99] disabled:opacity-50"
           >
             {actionLoading
               ? "Empezando..."
-              : "Empezar ahora"}
+              : "Empezar ayuno ahora"}
           </button>
-        </div>
 
-        {actionError && (
-          <p className="mt-3 text-xs leading-5 text-red-600">
-            {actionError}
-          </p>
-        )}
+          {actionError && (
+            <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs leading-5 text-red-600">
+              {actionError}
+            </p>
+          )}
+        </div>
       </section>
     );
   }
 
   return (
     <section
-      className={`mx-5 mb-4 rounded-[22px] border px-4 py-4 shadow-[0_6px_20px_rgba(80,60,42,0.04)] ${
+      className={`mx-5 mb-5 overflow-hidden rounded-[28px] shadow-[0_14px_34px_rgba(52,67,45,0.18)] ${
         completed
-          ? "border-[#CDD8C2] bg-[#F6F9F2]"
-          : "border-[#E3D9CE] bg-[#FFFDFC]"
+          ? "bg-[#536B4A]"
+          : "bg-[#3F5738]"
       }`}
     >
-      <Link
-        to="/fasting"
-        className="block"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p
-              className={`text-[10px] font-bold uppercase tracking-[0.17em] ${
-                completed
-                  ? "text-[#70845E]"
-                  : "text-[#E86632]"
-              }`}
-            >
-              {completed
-                ? "Ayuno completado"
-                : "Ayuno en curso"}
-            </p>
+      <div className="relative px-5 py-5">
+        <div className="pointer-events-none absolute -right-12 -top-10 h-40 w-40 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-12 right-10 h-28 w-28 rounded-full bg-[#E86632]/10" />
 
-            {completed ? (
-              <p className="mt-1 font-serif text-[21px] font-semibold text-[#536647]">
-                Ya puedes comer
-              </p>
-            ) : (
-              <p className="mt-1 font-serif text-[21px] font-semibold text-[#292923]">
-                Faltan{" "}
-                {remaining?.hours ?? 0} h{" "}
-                {remaining?.minutes ?? 0} min
-              </p>
-            )}
+        <Link
+          to="/fasting"
+          className="relative block"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-[#F6DFD2]">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="9"
+                    />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                </span>
+
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#EBDCCF]">
+                  {completed
+                    ? "Ayuno completado"
+                    : "Ayuno en curso"}
+                </p>
+              </div>
+
+              {completed ? (
+                <>
+                  <p className="mt-4 font-serif text-[32px] font-semibold leading-none tracking-[-0.04em] text-white">
+                    Objetivo cumplido
+                  </p>
+
+                  <p className="mt-2 text-sm text-white/70">
+                    Ya puedes finalizar y guardar tu sesión.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                    Tiempo restante
+                  </p>
+
+                  <div className="mt-1 flex items-end gap-2 text-white">
+                    <span className="font-serif text-[48px] font-semibold leading-none tracking-[-0.05em]">
+                      {remaining?.hours ?? 0}
+                    </span>
+
+                    <span className="mb-1 text-[18px] font-semibold text-white/75">
+                      h
+                    </span>
+
+                    <span className="font-serif text-[48px] font-semibold leading-none tracking-[-0.05em]">
+                      {remaining?.minutes ?? 0}
+                    </span>
+
+                    <span className="mb-1 text-[18px] font-semibold text-white/75">
+                      min
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <span className="rounded-full bg-[#E86632] px-3 py-1.5 text-[11px] font-bold text-white shadow-[0_5px_14px_rgba(232,102,50,0.25)]">
+              {completed
+                ? "✓"
+                : `${Math.round(
+                    progress * 100
+                  )}%`}
+            </span>
           </div>
 
-          <span className="text-xl font-light text-[#A89E94]">
-            ›
-          </span>
-        </div>
+          <div className="mt-6">
+            <div className="h-2.5 overflow-hidden rounded-full bg-black/15">
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ${
+                  completed
+                    ? "bg-[#F3C969]"
+                    : "bg-[#E86632]"
+                }`}
+                style={{
+                  width: `${progress * 100}%`,
+                }}
+              />
+            </div>
 
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#EAE3DA]">
-          <div
-            className={`h-full rounded-full transition-all duration-1000 ${
+            <div className="mt-3 flex items-end justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">
+                  Objetivo
+                </p>
+
+                <p className="mt-1 text-sm font-bold text-white">
+                  {fastingHours} h
+                </p>
+              </div>
+
+              <div className="text-right">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">
+                  {completed
+                    ? "Estado"
+                    : "Finalización"}
+                </p>
+
+                <p className="mt-1 text-sm font-bold text-white">
+                  {completed
+                    ? "Completado"
+                    : formatTime(
+                        activeFast.targetEndAt
+                      )}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <div className="relative mt-5 border-t border-white/10 pt-4">
+          <button
+            type="button"
+            onClick={
+              handleStopFast
+            }
+            disabled={
+              actionLoading
+            }
+            className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold transition active:scale-[0.99] disabled:opacity-50 ${
               completed
-                ? "bg-[#7A8B65]"
-                : "bg-[#E86632]"
+                ? "bg-[#F3C969] text-[#34412E]"
+                : "bg-white/10 text-white ring-1 ring-white/15"
             }`}
-            style={{
-              width: `${progress * 100}%`,
-            }}
-          />
+          >
+            {actionLoading
+              ? "Guardando..."
+              : completed
+              ? "Finalizar y guardar ayuno"
+              : "Terminar ayuno antes"}
+          </button>
+
+          {actionError && (
+            <p className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-xs leading-5 text-[#FFD9CC]">
+              {actionError}
+            </p>
+          )}
         </div>
-
-        <div className="mt-2 flex items-center justify-between text-[11px] text-[#91877D]">
-          <span>
-            {fastingHours} h
-          </span>
-
-          <span>
-            {completed
-              ? "Objetivo alcanzado"
-              : `Termina a las ${formatTime(
-                  activeFast.targetEndAt
-                )}`}
-          </span>
-        </div>
-      </Link>
-
-      <div className="mt-3 border-t border-[#EAE3DA] pt-3">
-        <button
-          type="button"
-          onClick={
-            handleStopFast
-          }
-          disabled={
-            actionLoading
-          }
-          className={`w-full rounded-xl px-3 py-2.5 text-xs font-semibold transition active:scale-[0.99] disabled:opacity-50 ${
-            completed
-              ? "bg-[#7A8B65] text-white"
-              : "border border-[#E6CFC5] bg-[#FFF9F6] text-[#A34F34]"
-          }`}
-        >
-          {actionLoading
-            ? "Guardando..."
-            : completed
-            ? "Finalizar ayuno"
-            : "Terminar ayuno"}
-        </button>
-
-        {actionError && (
-          <p className="mt-3 text-xs leading-5 text-red-600">
-            {actionError}
-          </p>
-        )}
       </div>
     </section>
   );

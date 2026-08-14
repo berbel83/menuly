@@ -22,64 +22,78 @@ export default function WeekNavigator({
   );
 
   return (
-    <section className="px-5 pb-4">
-      <div className="rounded-[20px] border border-[#E4DBD1] bg-[#FFFDFC] px-4 py-4 shadow-[0_5px_18px_rgba(74,56,40,0.04)]">
-        <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onPrevious}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F4EEE7] text-[24px] font-light text-[#5E574F] transition active:scale-95"
-            aria-label="Semana anterior"
-          >
-            ‹
-          </button>
-
-          <div className="min-w-0 flex-1 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A19589]">
-              Esta semana
-            </p>
-
-            <h2 className="mt-1 truncate font-serif text-[22px] font-semibold tracking-[-0.025em] text-[#272720]">
-              {label}
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onNext}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F4EEE7] text-[24px] font-light text-[#5E574F] transition active:scale-95"
-            aria-label="Semana siguiente"
-          >
-            ›
-          </button>
-        </div>
-
-        <div className="mt-4 flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#ECE5DC]">
-            <div
-              className="h-full rounded-full bg-[#D96536] transition-all duration-300"
-              style={{
-                width: `${progress}%`,
-              }}
-            />
-          </div>
-
-          <span className="shrink-0 text-xs font-semibold text-[#6F675F]">
-            {plannedCount}/{totalCount}
-          </span>
-        </div>
-
-        {!isCurrentWeek && (
-          <div className="mt-3 text-center">
+    <section className="px-5 pb-5">
+      <div className="overflow-hidden rounded-[26px] bg-[#EAF0E5] shadow-[0_10px_28px_rgba(67,80,60,0.08)] ring-1 ring-[#DCE6D5]">
+        <div className="px-5 py-5">
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={onToday}
-              className="text-xs font-semibold text-[#D96536] transition hover:text-[#B95029]"
+              onClick={onPrevious}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#536B4A] text-[25px] font-light text-white shadow-[0_5px_14px_rgba(83,107,74,0.18)] transition active:scale-95"
+              aria-label="Semana anterior"
             >
-              Volver a esta semana
+              ‹
+            </button>
+
+            <div className="min-w-0 flex-1 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#738465]">
+                Plan semanal
+              </p>
+
+              <h2 className="mt-1 truncate font-serif text-[23px] font-semibold tracking-[-0.03em] text-[#2D352B]">
+                {label}
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={onNext}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#536B4A] text-[25px] font-light text-white shadow-[0_5px_14px_rgba(83,107,74,0.18)] transition active:scale-95"
+              aria-label="Semana siguiente"
+            >
+              ›
             </button>
           </div>
-        )}
+
+          <div className="mt-5 rounded-2xl bg-white/75 px-4 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8B9682]">
+                  Menús preparados
+                </p>
+
+                <p className="mt-1 font-serif text-[22px] font-semibold text-[#2F372D]">
+                  {plannedCount} de {totalCount}
+                </p>
+              </div>
+
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-[#F6E5DC] text-sm font-bold text-[#C45A32]">
+                {progress}%
+              </div>
+            </div>
+
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#DCE4D7]">
+              <div
+                className="h-full rounded-full bg-[#E86632] transition-all duration-300"
+                style={{
+                  width: `${progress}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          {!isCurrentWeek && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={onToday}
+                className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-[#536B4A] shadow-sm transition active:scale-[0.98]"
+              >
+                Volver a esta semana
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

@@ -7,73 +7,105 @@ export default function ShoppingSummary({
   itemCount,
   onClick,
 }: ShoppingSummaryProps) {
+  const hasItems =
+    itemCount > 0;
+
   return (
-    <section className="px-6 pb-6 pt-4">
+    <section className="px-5 pb-6 pt-1">
       <button
         type="button"
         onClick={onClick}
         className="
-          flex
+          group
+          relative
           w-full
-          items-center
-          gap-4
-          rounded-[22px]
-          border
-          border-[#E3D8CD]
-          bg-[#FFF8F1]
-          px-4
-          py-4
+          overflow-hidden
+          rounded-[26px]
+          bg-[#536B4A]
+          px-5
+          py-5
           text-left
-          shadow-[0_8px_24px_rgba(95,67,43,0.05)]
+          shadow-[0_14px_32px_rgba(73,91,64,0.18)]
           transition
-          hover:-translate-y-[1px]
-          hover:shadow-[0_12px_28px_rgba(95,67,43,0.08)]
+          active:scale-[0.99]
         "
       >
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-[#D96536] shadow-[0_3px_10px_rgba(95,67,43,0.06)]">
-          <svg
-            width="23"
-            height="23"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 6h18l-2 13H5L3 6Z" />
-            <path d="M8 6a4 4 0 0 1 8 0" />
-            <path d="M8 10v5" />
-            <path d="M12 10v5" />
-            <path d="M16 10v5" />
-          </svg>
-        </div>
+        <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/5" />
 
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#D96536]">
-            Compra
-          </p>
+        <div className="pointer-events-none absolute -bottom-16 left-10 h-32 w-32 rounded-full bg-[#E86632]/10" />
 
-          <h3 className="mt-0.5 font-serif text-[21px] font-semibold leading-tight text-[#25251F]">
-            Lista de la compra
-          </h3>
-
-          <p className="mt-1 text-[13px] text-[#81766D]">
-            {itemCount === 0
-              ? "Sin productos todavía"
-              : `${itemCount} productos esta semana`}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-3">
-          <div className="grid h-11 min-w-11 place-items-center rounded-full bg-[#D96536] px-3 text-[16px] font-semibold text-white">
-            {itemCount}
+        <div className="relative flex items-center gap-4">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] bg-white/12 text-[#F8E8DF] ring-1 ring-white/10">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 6h18l-2 13H5L3 6Z" />
+              <path d="M8 6a4 4 0 0 1 8 0" />
+              <path d="M8 10v5" />
+              <path d="M12 10v5" />
+              <path d="M16 10v5" />
+            </svg>
           </div>
 
-          <span className="text-[30px] font-light leading-none text-[#B56A48]">
-            ›
-          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#D8E6D2]">
+              Compra
+            </p>
+
+            <h3 className="mt-1 font-serif text-[23px] font-semibold leading-tight tracking-[-0.03em] text-white">
+              Lista de la compra
+            </h3>
+
+            <p className="mt-1.5 text-[13px] leading-5 text-white/65">
+              {hasItems
+                ? `${itemCount} ${
+                    itemCount === 1
+                      ? "producto preparado"
+                      : "productos preparados"
+                  } esta semana`
+                : "Cuando planifiques comidas, aparecerán aquí los ingredientes."}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-center gap-2">
+            <div
+              className={`grid h-12 min-w-12 place-items-center rounded-full px-3 text-[17px] font-bold shadow-[0_6px_16px_rgba(0,0,0,0.12)] ${
+                hasItems
+                  ? "bg-[#E86632] text-white"
+                  : "bg-white/12 text-white/65"
+              }`}
+            >
+              {itemCount}
+            </div>
+
+            <span className="text-[25px] font-light leading-none text-white/55 transition group-active:translate-x-0.5">
+              ›
+            </span>
+          </div>
         </div>
+
+        {hasItems && (
+          <div className="relative mt-5 flex items-center justify-between border-t border-white/10 pt-4">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#F3C969]" />
+
+              <span className="text-[11px] font-semibold text-white/70">
+                Lista lista para revisar
+              </span>
+            </div>
+
+            <span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold text-white/80">
+              Ver compra
+            </span>
+          </div>
+        )}
       </button>
     </section>
   );
