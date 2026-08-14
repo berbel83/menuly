@@ -57,6 +57,7 @@ export default function WelcomePage() {
         setErrorMessage(
           "No encontramos ningún hogar con ese código."
         );
+
         return;
       }
 
@@ -74,37 +75,32 @@ export default function WelcomePage() {
 
   return (
     <AppShell>
-      <div className="flex min-h-screen flex-col justify-center px-6 py-10 sm:min-h-[720px]">
+      <div className="flex min-h-screen flex-col justify-center px-5 py-8 sm:min-h-[720px]">
         <div className="mx-auto w-full max-w-md">
           <div className="text-center">
-            <div className="mx-auto grid h-20 w-20 place-items-center rounded-[24px] bg-[#FBF8F3] shadow-[0_12px_35px_rgba(63,84,62,0.10)] ring-1 ring-[#E3D9CE]">
-              <div className="relative h-12 w-12">
-                <div className="absolute inset-0 rounded-full border-[6px] border-[#3F543E]" />
-
-                <div className="absolute right-0 top-1/2 h-5 w-5 -translate-y-1/2 bg-[#FBF8F3]" />
-
-                <div className="absolute right-1 top-1/2 flex -translate-y-1/2 gap-1">
-                  <span className="block h-4 w-1.5 rounded-full bg-[#E86632]" />
-                  <span className="block h-4 w-1.5 rounded-full bg-[#E86632]" />
-                </div>
-              </div>
+            <div className="mx-auto grid h-20 w-20 place-items-center rounded-[24px] bg-white p-1.5 shadow-[0_12px_30px_rgba(20,34,24,0.24)]">
+              <img
+                src="/pwa-192x192.png"
+                alt="Compausa"
+                className="h-full w-full rounded-[19px] object-cover"
+              />
             </div>
 
-            <h1 className="mt-5 font-serif text-[38px] font-semibold tracking-[-0.04em] text-[#3F543E]">
-              compausa
+            <h1 className="mt-5 text-[30px] font-bold uppercase tracking-[0.08em] text-[#FFF9F3]">
+              Compausa
             </h1>
 
-            <p className="mt-2 text-sm font-medium text-[#E86632]">
-              Tu comida. Tu tiempo.
+            <p className="mt-2 font-serif text-[21px] font-semibold text-white">
+              Organiza tu casa, cuida tu ritmo.
             </p>
 
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-[#81766D]">
-              Organizad juntos las comidas de casa,
-              la compra y vuestro ritmo de alimentación.
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-white/68">
+              Menús, compra, ayuno y hábitos diarios,
+              todo en un mismo lugar.
             </p>
           </div>
 
-          <div className="mt-9 grid grid-cols-2 rounded-2xl bg-[#EEE7DE] p-1">
+          <div className="mt-7 grid grid-cols-2 rounded-[16px] bg-white/10 p-1 ring-1 ring-white/10">
             <button
               type="button"
               onClick={() => {
@@ -113,8 +109,8 @@ export default function WelcomePage() {
               }}
               className={`rounded-xl px-3 py-3 text-sm font-semibold transition ${
                 mode === "create"
-                  ? "bg-[#FFFDFC] text-[#2D2A26] shadow-sm"
-                  : "text-[#887D73]"
+                  ? "bg-white text-[#3F6248] shadow-sm"
+                  : "text-white/70"
               }`}
             >
               Crear hogar
@@ -128,32 +124,32 @@ export default function WelcomePage() {
               }}
               className={`rounded-xl px-3 py-3 text-sm font-semibold transition ${
                 mode === "join"
-                  ? "bg-[#FFFDFC] text-[#2D2A26] shadow-sm"
-                  : "text-[#887D73]"
+                  ? "bg-white text-[#3F6248] shadow-sm"
+                  : "text-white/70"
               }`}
             >
               Unirme
             </button>
           </div>
 
-          <div className="mt-5 rounded-[24px] border border-[#E3D9CE] bg-[#FFFDFC] p-5 shadow-[0_10px_35px_rgba(80,60,42,0.06)]">
+          <div className="mt-4 rounded-[22px] bg-white p-5 shadow-[0_12px_30px_rgba(20,34,24,0.18)]">
             {mode === "create" ? (
               <>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#E86632]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E97857]">
                   Nuevo hogar
                 </p>
 
-                <h2 className="mt-2 font-serif text-[24px] font-semibold text-[#292923]">
+                <h2 className="mt-2 font-serif text-[23px] font-semibold text-[#263129]">
                   Ponle un nombre
                 </h2>
 
-                <p className="mt-1 text-sm leading-6 text-[#81766D]">
+                <p className="mt-1 text-sm leading-6 text-[#7D837B]">
                   Después te daremos un código para
                   compartirlo con quien quieras.
                 </p>
 
                 <label className="mt-5 block">
-                  <span className="text-xs font-semibold text-[#71685F]">
+                  <span className="text-xs font-semibold text-[#5F695F]">
                     Nombre del hogar
                   </span>
 
@@ -167,7 +163,7 @@ export default function WelcomePage() {
                     }
                     placeholder="Ej. Nuestra casa"
                     maxLength={50}
-                    className="mt-2 w-full rounded-2xl border border-[#DED5CA] bg-[#FBF8F3] px-4 py-3.5 text-sm text-[#2D2A26] outline-none transition placeholder:text-[#AAA197] focus:border-[#E86632] focus:ring-4 focus:ring-[#E86632]/10"
+                    className="mt-2 w-full rounded-2xl border border-[#DDE5DB] bg-[#F4F7F2] px-4 py-3.5 text-sm text-[#263129] outline-none transition placeholder:text-[#A4ABA3] focus:border-[#E97857] focus:ring-4 focus:ring-[#E97857]/10"
                   />
                 </label>
 
@@ -180,7 +176,7 @@ export default function WelcomePage() {
                   onClick={
                     handleCreateHouse
                   }
-                  className="mt-5 w-full rounded-2xl bg-[#E86632] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#D85B29] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-5 w-full rounded-2xl bg-[#E97857] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_6px_16px_rgba(233,120,87,0.18)] transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading
                     ? "Creando..."
@@ -189,21 +185,21 @@ export default function WelcomePage() {
               </>
             ) : (
               <>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F543E]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#3F6248]">
                   Unirme a un hogar
                 </p>
 
-                <h2 className="mt-2 font-serif text-[24px] font-semibold text-[#292923]">
+                <h2 className="mt-2 font-serif text-[23px] font-semibold text-[#263129]">
                   Introduce el código
                 </h2>
 
-                <p className="mt-1 text-sm leading-6 text-[#81766D]">
+                <p className="mt-1 text-sm leading-6 text-[#7D837B]">
                   Pide el código a la persona que
                   creó el hogar en Compausa.
                 </p>
 
                 <label className="mt-5 block">
-                  <span className="text-xs font-semibold text-[#71685F]">
+                  <span className="text-xs font-semibold text-[#5F695F]">
                     Código del hogar
                   </span>
 
@@ -222,7 +218,7 @@ export default function WelcomePage() {
                       )
                     }
                     placeholder="HX82KP"
-                    className="mt-2 w-full rounded-2xl border border-[#DED5CA] bg-[#FBF8F3] px-4 py-4 text-center font-mono text-[24px] font-bold uppercase tracking-[0.22em] text-[#2D2A26] outline-none transition placeholder:text-[#C3BBB2] focus:border-[#3F543E] focus:ring-4 focus:ring-[#3F543E]/10"
+                    className="mt-2 w-full rounded-2xl border border-[#DDE5DB] bg-[#F4F7F2] px-4 py-4 text-center font-mono text-[24px] font-bold uppercase tracking-[0.22em] text-[#263129] outline-none transition placeholder:text-[#B8BEB7] focus:border-[#3F6248] focus:ring-4 focus:ring-[#3F6248]/10"
                   />
                 </label>
 
@@ -235,7 +231,7 @@ export default function WelcomePage() {
                   onClick={
                     handleJoinHouse
                   }
-                  className="mt-5 w-full rounded-2xl bg-[#3F543E] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#334531] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-5 w-full rounded-2xl bg-[#3F6248] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_6px_16px_rgba(63,98,72,0.18)] transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading
                     ? "Buscando..."
