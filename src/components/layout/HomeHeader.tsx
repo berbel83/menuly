@@ -12,26 +12,26 @@ export default function HomeHeader({
   onOpenShopping,
 }: HomeHeaderProps) {
   return (
-    <header className="px-5 pb-5 pt-5">
+    <header className="px-4 pb-3 pt-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[18px] bg-white shadow-[0_8px_25px_rgba(65,55,45,0.10)] ring-1 ring-[#E9E1D8]">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] bg-[#3F6248] p-1.5 shadow-[0_8px_22px_rgba(63,98,72,0.20)]">
             <img
               src="/pwa-192x192.png"
               alt="Compausa"
-              className="h-full w-full object-cover"
+              className="h-full w-full rounded-[13px] object-cover"
             />
           </div>
 
           <div className="min-w-0">
-            <p className="font-serif text-[26px] font-semibold leading-none tracking-[-0.04em] text-[#273126]">
+            <p className="font-serif text-[27px] font-semibold leading-none tracking-[-0.04em] text-[#263129]">
               Compausa
             </p>
 
             <div className="mt-2 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E86632]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E97857]" />
 
-              <p className="truncate text-[12px] font-semibold text-[#8A7E73]">
+              <p className="truncate text-[11px] font-semibold text-[#7C827A]">
                 {houseName}
               </p>
             </div>
@@ -42,13 +42,13 @@ export default function HomeHeader({
           <button
             type="button"
             onClick={onOpenShopping}
-            className="relative grid h-11 w-11 place-items-center rounded-[15px] bg-white text-[#536B4A] shadow-[0_6px_20px_rgba(70,60,50,0.08)] ring-1 ring-[#E9E1D8] transition active:scale-95"
+            className="relative grid h-10 w-10 place-items-center rounded-[14px] bg-white text-[#3F6248] shadow-[0_5px_14px_rgba(52,70,55,0.08)] ring-1 ring-[#DDE5DB] transition active:scale-95"
             aria-label="Lista de la compra"
             title="Lista de la compra"
           >
             <svg
-              width="20"
-              height="20"
+              width="19"
+              height="19"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -62,7 +62,7 @@ export default function HomeHeader({
             </svg>
 
             {shoppingCount > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-[#E86632] px-1 text-[10px] font-bold text-white shadow-sm">
+              <span className="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-[#E97857] px-1 text-[10px] font-bold text-white">
                 {shoppingCount > 99
                   ? "99+"
                   : shoppingCount}
@@ -72,17 +72,17 @@ export default function HomeHeader({
 
           <Link
             to="/settings"
-            className="grid h-11 w-11 place-items-center rounded-[15px] bg-white text-[#536B4A] shadow-[0_6px_20px_rgba(70,60,50,0.08)] ring-1 ring-[#E9E1D8] transition active:scale-95"
+            className="grid h-10 w-10 place-items-center rounded-[14px] bg-white text-[#3F6248] shadow-[0_5px_14px_rgba(52,70,55,0.08)] ring-1 ring-[#DDE5DB] transition active:scale-95"
             aria-label="Ajustes"
             title="Ajustes"
           >
             <svg
-              width="20"
-              height="20"
+              width="19"
+              height="19"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.9"
+              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
             >

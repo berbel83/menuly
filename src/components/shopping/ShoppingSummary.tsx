@@ -11,10 +11,12 @@ export default function ShoppingSummary({
     <section className="px-4 pb-5 pt-1">
       <button
         type="button"
-        onClick={onClick}
-        className="flex w-full items-center gap-3 rounded-[18px] bg-[#FF6B2C] px-4 py-3.5 text-left shadow-[0_8px_20px_rgba(255,107,44,0.22)]"
+        onClick={
+          onClick
+        }
+        className="flex w-full items-center gap-3 rounded-[16px] bg-[#3F6248] px-4 py-3.5 text-left shadow-[0_8px_20px_rgba(63,98,72,0.18)] transition active:scale-[0.995]"
       >
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/20 text-white">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/10 text-white">
           <svg
             width="22"
             height="22"
@@ -22,6 +24,8 @@ export default function ShoppingSummary({
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
             <path d="M3 6h18l-2 13H5L3 6Z" />
             <path d="M8 6a4 4 0 0 1 8 0" />
@@ -29,7 +33,7 @@ export default function ShoppingSummary({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[9px] font-bold uppercase tracking-[0.17em] text-white/70">
+          <p className="text-[9px] font-bold uppercase tracking-[0.17em] text-white/60">
             Compra
           </p>
 
@@ -37,14 +41,18 @@ export default function ShoppingSummary({
             Lista de la compra
           </h3>
 
-          <p className="text-[10px] text-white/75">
+          <p className="text-[10px] text-white/70">
             {itemCount === 0
               ? "Sin productos todavía"
-              : `${itemCount} productos`}
+              : `${itemCount} ${
+                  itemCount === 1
+                    ? "producto"
+                    : "productos"
+                }`}
           </p>
         </div>
 
-        <div className="grid h-10 min-w-10 place-items-center rounded-full bg-[#F3C84B] px-2 text-sm font-bold text-[#554108]">
+        <div className="grid h-10 min-w-10 place-items-center rounded-full bg-[#E97857] px-2 text-sm font-bold text-white">
           {itemCount}
         </div>
       </button>
