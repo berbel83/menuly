@@ -11,13 +11,13 @@ interface MealListProps {
 }
 
 const accents = [
-  "#FF6B2C",
-  "#4D7C3A",
-  "#F3C84B",
-  "#FF876B",
-  "#4D7C3A",
-  "#FF6B2C",
-  "#DDA83A",
+  "#3F6248",
+  "#EF704B",
+  "#3F6248",
+  "#EF704B",
+  "#3F6248",
+  "#EF704B",
+  "#3F6248",
 ];
 
 export default function MealList({
@@ -27,13 +27,8 @@ export default function MealList({
   return (
     <section className="px-4 pb-3">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="font-serif text-[21px] font-semibold text-[#243025]">
-          Comidas
-        </h3>
-
-        <span className="rounded-full bg-[#DDECBF] px-3 py-1 text-[9px] font-bold text-[#42652F]">
-          ESTA SEMANA
-        </span>
+        <h3 className="font-serif text-[21px] font-semibold text-[#243025]">Comidas</h3>
+        <span className="rounded-full bg-[#EEF4EC] px-3 py-1 text-[9px] font-bold text-[#3F6248]">ESTA SEMANA</span>
       </div>
 
       <div className="space-y-2">
@@ -44,9 +39,7 @@ export default function MealList({
             dayNumber={item.dayNumber}
             meal={item.meal}
             accentColor={accents[index]}
-            onClick={() =>
-              onSelectDay(index)
-            }
+            onClick={() => onSelectDay(index)}
           />
         ))}
       </div>

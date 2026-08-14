@@ -17,20 +17,11 @@ import {
   scheduleFastCompletedNotification,
 } from "../../services/fastingNotificationService";
 
-import {
-  saveFastingHistory,
-} from "../../services/fastingHistoryService";
+import { saveFastingHistory } from "../../services/fastingHistoryService";
 
 function formatRemaining(milliseconds: number) {
-  const totalMinutes = Math.max(
-    0,
-    Math.ceil(milliseconds / 1000 / 60)
-  );
-
-  return {
-    hours: Math.floor(totalMinutes / 60),
-    minutes: totalMinutes % 60,
-  };
+  const totalMinutes = Math.max(0, Math.ceil(milliseconds / 1000 / 60));
+  return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 };
 }
 
 function formatTime(value: string) {
@@ -43,45 +34,26 @@ function formatTime(value: string) {
 export default function FastingSummary() {
   const [activeFast, setActiveFast] =
     useState<ActiveFast | null>(() => loadActiveFast());
+  const [now, setNow] = useState(() => new Date());
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const [now, setNow] =
-    useState(() => new Date());
-
-  const [actionError, setActionError] =
-    useState<string | null>(null);
-
-  const [actionLoading, setActionLoading] =
-    useState(false);
-
-  const settings = useMemo(
-    () => loadFastingSettings(),
-    [activeFast]
-  );
+  const settings = useMemo(() => loadFastingSettings(), [activeFast]);
 
   useEffect(() => {
     if (!activeFast) return;
-
-    const interval = window.setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
+    const interval = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(interval);
   }, [activeFast]);
 
   const fastingHours = activeFast
     ? activeFast.fastingHours
     : getFastingHours(settings);
 
-  const progress = activeFast
-    ? getFastProgress(activeFast, now)
-    : 0;
+  const progress = activeFast ? getFastProgress(activeFast, now) : 0;
 
   const remaining = activeFast
-    ? formatRemaining(
-        getRemainingMilliseconds(activeFast, now)
-      )
+    ? formatRemaining(getRemainingMilliseconds(activeFast, now))
     : null;
 
   const completed =
@@ -94,7 +66,6 @@ export default function FastingSummary() {
       setActionError(null);
 
       const fast = startFast(fastingHours);
-
       setActiveFast(fast);
       setNow(new Date());
 
@@ -102,10 +73,7 @@ export default function FastingSummary() {
         await scheduleFastCompletedNotification(fast);
       } catch (error) {
         console.error(error);
-
-        setActionError(
-          "El ayuno ha empezado, pero no se pudo programar el aviso."
-        );
+        setActionError("El ayuno ha empezado, pero no se pudo programar el aviso.");
       }
     } finally {
       setActionLoading(false);
@@ -128,23 +96,15 @@ export default function FastingSummary() {
       setActionError(null);
 
       try {
-        await saveFastingHistory(
-          activeFast,
-          new Date()
-        );
+        await saveFastingHistory(activeFast, new Date());
       } catch (error) {
         setActionError(
-          error instanceof Error
-            ? error.message
-            : "No se pudo guardar este ayuno."
+          error instanceof Error ? error.message : "No se pudo guardar este ayuno."
         );
-
         return;
       }
 
-      window.dispatchEvent(
-        new Event("fasting-history-updated")
-      );
+      window.dispatchEvent(new Event("fasting-history-updated"));
 
       try {
         await cancelFastCompletedNotification();
@@ -162,21 +122,19 @@ export default function FastingSummary() {
 
   if (!activeFast) {
     return (
-      <section className="mx-4 mb-3 overflow-hidden rounded-[20px] bg-[#FF8A62] shadow-[0_8px_22px_rgba(255,107,44,0.20)]">
+      <section className="mx-4 mb-3 rounded-[18px] bg-white shadow-[0_6px_18px_rgba(42,60,44,0.07)] ring-1 ring-[#DCE4D8]">
         <div className="flex items-center gap-3 px-4 py-3.5">
-          <Link
-            to="/fasting"
-            className="min-w-0 flex-1"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">
-              Ayuno
-            </p>
-
-            <p className="mt-0.5 font-serif text-[20px] font-semibold text-white">
+          <Link to="/fasting" className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#EF704B]" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#3F6248]">
+                Ayuno
+              </p>
+            </div>
+            <p className="mt-1 font-serif text-[19px] font-semibold text-[#243025]">
               Hoy aún no has empezado
             </p>
-
-            <p className="mt-0.5 text-xs text-white/75">
+            <p className="mt-0.5 text-xs text-[#7D8479]">
               Objetivo · {fastingHours} horas
             </p>
           </Link>
@@ -185,16 +143,14 @@ export default function FastingSummary() {
             type="button"
             onClick={handleStartNow}
             disabled={actionLoading}
-            className="shrink-0 rounded-xl bg-[#2F542C] px-4 py-2.5 text-xs font-bold text-white shadow-md disabled:opacity-50"
+            className="shrink-0 rounded-xl bg-[#EF704B] px-4 py-2.5 text-xs font-bold text-white shadow-[0_5px_14px_rgba(239,112,75,0.18)] disabled:opacity-50"
           >
-            {actionLoading
-              ? "..."
-              : "Empezar"}
+            {actionLoading ? "..." : "Empezar"}
           </button>
         </div>
 
         {actionError && (
-          <p className="bg-white/15 px-4 py-2 text-xs text-white">
+          <p className="border-t border-[#EAEFE7] px-4 py-2 text-xs text-red-600">
             {actionError}
           </p>
         )}
@@ -203,58 +159,44 @@ export default function FastingSummary() {
   }
 
   return (
-    <section className="mx-4 mb-3 overflow-hidden rounded-[20px] bg-[#355B30] shadow-[0_10px_24px_rgba(47,84,44,0.24)]">
-      <Link
-        to="/fasting"
-        className="block px-4 pb-3 pt-3.5"
-      >
+    <section className="mx-4 mb-3 overflow-hidden rounded-[18px] bg-[#3F6248] shadow-[0_8px_22px_rgba(63,98,72,0.20)]">
+      <Link to="/fasting" className="block px-4 pb-3 pt-3.5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#DDEFD4]">
-              {completed
-                ? "Ayuno completado"
-                : "Ayuno en curso"}
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
+              {completed ? "Ayuno completado" : "Ayuno en curso"}
             </p>
 
             {completed ? (
-              <p className="mt-1 font-serif text-[27px] font-semibold text-white">
-                Objetivo cumplido ✓
+              <p className="mt-1 font-serif text-[26px] font-semibold text-white">
+                Objetivo cumplido
               </p>
             ) : (
-              <p className="mt-1 font-serif text-[30px] font-semibold leading-none text-white">
+              <p className="mt-1 font-serif text-[29px] font-semibold leading-none text-white">
                 {remaining?.hours ?? 0}
-                <span className="text-[16px] text-white/70"> h </span>
+                <span className="text-[15px] text-white/65"> h </span>
                 {remaining?.minutes ?? 0}
-                <span className="text-[16px] text-white/70"> min</span>
+                <span className="text-[15px] text-white/65"> min</span>
               </p>
             )}
           </div>
 
-          <span className="rounded-full bg-[#FF6B2C] px-3 py-1.5 text-[11px] font-bold text-white">
-            {completed
-              ? "100%"
-              : `${Math.round(progress * 100)}%`}
+          <span className="rounded-full bg-[#EF704B] px-3 py-1.5 text-[10px] font-bold text-white">
+            {completed ? "100%" : `${Math.round(progress * 100)}%`}
           </span>
         </div>
 
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20">
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/15">
           <div
-            className="h-full rounded-full bg-[#F3C84B] transition-all duration-1000"
-            style={{
-              width: `${progress * 100}%`,
-            }}
+            className="h-full rounded-full bg-[#EF704B] transition-all duration-1000"
+            style={{ width: `${progress * 100}%` }}
           />
         </div>
 
-        <div className="mt-2 flex justify-between text-[10px] font-semibold text-white/65">
+        <div className="mt-2 flex justify-between text-[10px] font-semibold text-white/60">
+          <span>Objetivo {fastingHours} h</span>
           <span>
-            Objetivo {fastingHours} h
-          </span>
-
-          <span>
-            {completed
-              ? "Completado"
-              : `Hasta ${formatTime(activeFast.targetEndAt)}`}
+            {completed ? "Completado" : `Hasta ${formatTime(activeFast.targetEndAt)}`}
           </span>
         </div>
       </Link>
@@ -266,8 +208,8 @@ export default function FastingSummary() {
           disabled={actionLoading}
           className={`w-full rounded-xl px-3 py-2.5 text-xs font-bold disabled:opacity-50 ${
             completed
-              ? "bg-[#F3C84B] text-[#304129]"
-              : "bg-white/12 text-white"
+              ? "bg-[#F2C968] text-[#31402D]"
+              : "bg-white/10 text-white"
           }`}
         >
           {actionLoading
@@ -278,9 +220,7 @@ export default function FastingSummary() {
         </button>
 
         {actionError && (
-          <p className="mt-2 text-xs text-[#FFD9CC]">
-            {actionError}
-          </p>
+          <p className="mt-2 text-xs text-[#FFD9CC]">{actionError}</p>
         )}
       </div>
     </section>

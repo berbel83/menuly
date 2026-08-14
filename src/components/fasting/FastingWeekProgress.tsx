@@ -21,10 +21,7 @@ interface DayProgress {
   entry: FastingHistoryEntry | null;
 }
 
-function sameLocalDay(
-  first: Date,
-  second: Date
-) {
+function sameLocalDay(first: Date, second: Date) {
   return (
     first.getFullYear() === second.getFullYear() &&
     first.getMonth() === second.getMonth() &&
@@ -33,24 +30,17 @@ function sameLocalDay(
 }
 
 export default function FastingWeekProgress() {
-  const [history, setHistory] =
-    useState<FastingHistoryEntry[]>([]);
+  const [history, setHistory] = useState<FastingHistoryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const loadHistory =
-    useCallback(async () => {
-      try {
-        setLoading(true);
-
-        setHistory(
-          await loadCurrentWeekFastingHistory()
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+  const loadHistory = useCallback(async () => {
+    try {
+      setLoading(true);
+      setHistory(await loadCurrentWeekFastingHistory());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void loadHistory();
@@ -59,113 +49,72 @@ export default function FastingWeekProgress() {
       void loadHistory();
     }
 
-    window.addEventListener(
-      "fasting-history-updated",
-      update
-    );
-
-    window.addEventListener(
-      "focus",
-      update
-    );
+    window.addEventListener("fasting-history-updated", update);
+    window.addEventListener("focus", update);
 
     return () => {
-      window.removeEventListener(
-        "fasting-history-updated",
-        update
-      );
-
-      window.removeEventListener(
-        "focus",
-        update
-      );
+      window.removeEventListener("fasting-history-updated", update);
+      window.removeEventListener("focus", update);
     };
   }, [loadHistory]);
 
-  const days =
-    useMemo<DayProgress[]>(() => {
-      const monday =
-        getMonday(new Date());
+  const days = useMemo<DayProgress[]>(() => {
+    const monday = getMonday(new Date());
 
-      return DAY_LABELS.map(
-        (label, index) => {
-          const date =
-            new Date(monday);
+    return DAY_LABELS.map((label, index) => {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + index);
 
-          date.setDate(
-            monday.getDate() + index
-          );
-
-          const entries =
-            history.filter(
-              (entry) =>
-                sameLocalDay(
-                  new Date(entry.endedAt),
-                  date
-                )
-            );
-
-          return {
-            label,
-            date,
-            entry:
-              entries.length > 0
-                ? entries[entries.length - 1]
-                : null,
-          };
-        }
+      const entries = history.filter((entry) =>
+        sameLocalDay(new Date(entry.endedAt), date)
       );
-    }, [history]);
 
-  const streak =
-    useMemo(() => {
-      const todayIndex =
-        days.findIndex(
-          (day) =>
-            sameLocalDay(
-              day.date,
-              new Date()
-            )
-        );
+      return {
+        label,
+        date,
+        entry: entries.length > 0 ? entries[entries.length - 1] : null,
+      };
+    });
+  }, [history]);
 
-      let index =
-        todayIndex >= 0 &&
-        days[todayIndex].entry
-          ? todayIndex
-          : todayIndex - 1;
+  const streak = useMemo(() => {
+    const todayIndex = days.findIndex((day) =>
+      sameLocalDay(day.date, new Date())
+    );
 
-      let count = 0;
+    let index =
+      todayIndex >= 0 && days[todayIndex].entry
+        ? todayIndex
+        : todayIndex - 1;
 
-      while (
-        index >= 0 &&
-        days[index].entry
-      ) {
-        count++;
-        index--;
-      }
+    let count = 0;
 
-      return count;
-    }, [days]);
+    while (index >= 0 && days[index].entry) {
+      count++;
+      index--;
+    }
+
+    return count;
+  }, [days]);
 
   if (loading && history.length === 0) {
     return null;
   }
 
   return (
-    <section className="mx-4 mb-3 rounded-[20px] bg-white px-4 py-3.5 shadow-[0_6px_18px_rgba(50,45,38,0.07)]">
+    <section className="mx-4 mb-3 rounded-[18px] bg-white px-4 py-3.5 shadow-[0_6px_18px_rgba(42,60,44,0.07)] ring-1 ring-[#DCE4D8]">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#FF6B2C]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#EF704B]">
             Tu progreso
           </p>
-
-          <h3 className="font-serif text-[20px] font-semibold text-[#253225]">
+          <h3 className="font-serif text-[20px] font-semibold text-[#243025]">
             Esta semana
           </h3>
         </div>
 
         {streak > 0 && (
-          <span className="rounded-full bg-[#FFE0D2] px-3 py-1.5 text-[10px] font-bold text-[#D84F1D]">
+          <span className="rounded-full bg-[#FBE7DF] px-3 py-1.5 text-[10px] font-bold text-[#C85D3C]">
             🔥 {streak} días
           </span>
         )}
@@ -173,22 +122,13 @@ export default function FastingWeekProgress() {
 
       <div className="mt-3 grid grid-cols-7 gap-1.5">
         {days.map((day) => {
-          const today =
-            sameLocalDay(
-              day.date,
-              new Date()
-            );
+          const today = sameLocalDay(day.date, new Date());
 
           return (
-            <div
-              key={day.date.toISOString()}
-              className="text-center"
-            >
+            <div key={day.date.toISOString()} className="text-center">
               <p
                 className={`text-[9px] font-bold ${
-                  today
-                    ? "text-[#FF6B2C]"
-                    : "text-[#837C74]"
+                  today ? "text-[#EF704B]" : "text-[#7E847B]"
                 }`}
               >
                 {day.label}
@@ -198,32 +138,24 @@ export default function FastingWeekProgress() {
                 className={`mt-1 flex h-[50px] flex-col items-center justify-center rounded-xl ${
                   day.entry
                     ? day.entry.completedTarget
-                      ? "bg-[#4D7C3A] text-white"
-                      : "bg-[#FF9A79] text-white"
+                      ? "bg-[#3F6248] text-white"
+                      : "bg-[#FBE7DF] text-[#B95B3F]"
                     : today
-                    ? "border-2 border-[#FF6B2C] bg-[#FFF3EB]"
-                    : "bg-[#F1EFEA]"
+                    ? "border-2 border-[#EF704B] bg-[#FFF7F2]"
+                    : "bg-[#F0F3EE]"
                 }`}
               >
                 {day.entry ? (
                   <>
                     <span className="text-[13px] font-bold">
-                      {Math.floor(
-                        day.entry.actualMinutes / 60
-                      )}
-                      h
+                      {Math.floor(day.entry.actualMinutes / 60)}h
                     </span>
-
                     {day.entry.completedTarget && (
-                      <span className="text-[9px] text-[#FFE36E]">
-                        ✓
-                      </span>
+                      <span className="text-[9px] text-[#F2C968]">✓</span>
                     )}
                   </>
                 ) : (
-                  <span className="text-[#AAA49D]">
-                    —
-                  </span>
+                  <span className="text-[#AAAFA8]">—</span>
                 )}
               </div>
             </div>
@@ -233,15 +165,10 @@ export default function FastingWeekProgress() {
 
       <Link
         to="/fasting/history"
-        className="mt-3 flex items-center justify-between rounded-xl bg-[#FFF0E7] px-3 py-2.5 text-xs font-bold text-[#D95220]"
+        className="mt-3 flex items-center justify-between rounded-xl bg-[#F0F5EE] px-3 py-2.5 text-xs font-bold text-[#3F6248]"
       >
-        <span>
-          Ver historial
-        </span>
-
-        <span>
-          ›
-        </span>
+        <span>Ver historial</span>
+        <span>›</span>
       </Link>
     </section>
   );
