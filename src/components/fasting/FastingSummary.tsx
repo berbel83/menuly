@@ -213,11 +213,6 @@ export default function FastingSummary() {
       const endedAt =
         new Date();
 
-      /*
-       * Guardamos primero el historial.
-       * Si esto falla, no borramos el ayuno
-       * activo para evitar perder la sesión.
-       */
       try {
         await saveFastingHistory(
           activeFast,
@@ -239,10 +234,19 @@ export default function FastingSummary() {
       }
 
       /*
-       * Una vez guardada la sesión,
-       * cancelamos cualquier aviso
-       * de finalización que siga pendiente.
+       * Avisamos al resto de componentes
+       * de que el historial ha cambiado.
+       *
+       * FastingWeekProgress escucha este evento
+       * y vuelve a cargar los datos de Supabase
+       * inmediatamente.
        */
+      window.dispatchEvent(
+        new Event(
+          "fasting-history-updated"
+        )
+      );
+
       try {
         await cancelFastCompletedNotification();
       } catch (error) {
@@ -252,9 +256,6 @@ export default function FastingSummary() {
         );
       }
 
-      /*
-       * Por último cerramos el ayuno local.
-       */
       stopFast();
 
       setActiveFast(

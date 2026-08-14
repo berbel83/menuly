@@ -7,6 +7,7 @@ import {
 import AppShell from "../components/layout/AppShell";
 import HomeHeader from "../components/layout/HomeHeader";
 import FastingSummary from "../components/fasting/FastingSummary";
+import FastingWeekProgress from "../components/fasting/FastingWeekProgress";
 import MealList from "../components/meals/MealList";
 import ShoppingSummary from "../components/shopping/ShoppingSummary";
 import WeekNavigator from "../components/navigation/WeekNavigator";
@@ -38,16 +39,28 @@ const shortDays: Record<Day, string> = {
 };
 
 function getMonday(date: Date) {
-  const result = new Date(date);
-  const day = result.getDay();
+  const result =
+    new Date(date);
+
+  const day =
+    result.getDay();
+
   const difference =
-    day === 0 ? -6 : 1 - day;
+    day === 0
+      ? -6
+      : 1 - day;
 
   result.setDate(
-    result.getDate() + difference
+    result.getDate() +
+      difference
   );
 
-  result.setHours(0, 0, 0, 0);
+  result.setHours(
+    0,
+    0,
+    0,
+    0
+  );
 
   return result;
 }
@@ -57,22 +70,33 @@ function dateFromWeekStart(
 ) {
   if (
     !value ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(value)
+    !/^\d{4}-\d{2}-\d{2}$/.test(
+      value
+    )
   ) {
     return null;
   }
 
-  const [year, month, day] =
-    value.split("-").map(Number);
-
-  const date = new Date(
+  const [
     year,
-    month - 1,
-    day
-  );
+    month,
+    day,
+  ] =
+    value
+      .split("-")
+      .map(Number);
+
+  const date =
+    new Date(
+      year,
+      month - 1,
+      day
+    );
 
   if (
-    Number.isNaN(date.getTime())
+    Number.isNaN(
+      date.getTime()
+    )
   ) {
     return null;
   }
@@ -83,7 +107,8 @@ function dateFromWeekStart(
 function formatWeekLabel(
   monday: Date
 ) {
-  const sunday = new Date(monday);
+  const sunday =
+    new Date(monday);
 
   sunday.setDate(
     monday.getDate() + 6
@@ -122,45 +147,58 @@ function formatWeekLabel(
 }
 
 export default function HomePage() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const [
     searchParams,
     setSearchParams,
-  ] = useSearchParams();
+  ] =
+    useSearchParams();
 
-  const { house } = useHouse();
+  const { house } =
+    useHouse();
 
-  const currentMonday = useMemo(
-    () => getMonday(new Date()),
-    []
-  );
-
-  const initialMonday = useMemo(() => {
-    const fromUrl =
-      dateFromWeekStart(
-        searchParams.get("week")
-      );
-
-    return (
-      fromUrl ?? currentMonday
+  const currentMonday =
+    useMemo(
+      () =>
+        getMonday(
+          new Date()
+        ),
+      []
     );
-  }, []);
+
+  const initialMonday =
+    useMemo(() => {
+      const fromUrl =
+        dateFromWeekStart(
+          searchParams.get(
+            "week"
+          )
+        );
+
+      return (
+        fromUrl ??
+        currentMonday
+      );
+    }, []);
 
   const [
     selectedMonday,
     setSelectedMonday,
-  ] = useState<Date>(
-    initialMonday
-  );
+  ] =
+    useState<Date>(
+      initialMonday
+    );
 
-  const weekStart = useMemo(
-    () =>
-      formatWeekStart(
-        selectedMonday
-      ),
-    [selectedMonday]
-  );
+  const weekStart =
+    useMemo(
+      () =>
+        formatWeekStart(
+          selectedMonday
+        ),
+      [selectedMonday]
+    );
 
   const houseCode =
     house?.code ?? "";
@@ -173,36 +211,41 @@ export default function HomePage() {
     errorMessage,
     removeMeal,
     clearWeek,
-  } = useWeeklyMenu(
-    houseCode,
-    weekStart
-  );
+  } =
+    useWeeklyMenu(
+      houseCode,
+      weekStart
+    );
 
   const {
     shoppingList,
     itemCount,
-  } = useShoppingList(
-    selectedMeals
-  );
+  } =
+    useShoppingList(
+      selectedMeals
+    );
 
   const [
     selectedMealDetails,
     setSelectedMealDetails,
-  ] = useState<Meal | null>(
-    null
-  );
+  ] =
+    useState<Meal | null>(
+      null
+    );
 
   const [
     selectedMealDay,
     setSelectedMealDay,
-  ] = useState<Day | null>(
-    null
-  );
+  ] =
+    useState<Day | null>(
+      null
+    );
 
   const [
     showShoppingList,
     setShowShoppingList,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   if (!house) {
     return null;
@@ -237,20 +280,24 @@ export default function HomePage() {
         const mealId =
           weeklyMenu[day];
 
-        const meal = mealId
-          ? meals.find(
-              (item) =>
-                item.id ===
-                mealId
-            )
-          : undefined;
+        const meal =
+          mealId
+            ? meals.find(
+                (item) =>
+                  item.id ===
+                  mealId
+              )
+            : undefined;
 
         return {
           dayShort:
             shortDays[day],
-          dayNumber: String(
-            date.getDate()
-          ),
+
+          dayNumber:
+            String(
+              date.getDate()
+            ),
+
           meal,
         };
       }
@@ -259,12 +306,15 @@ export default function HomePage() {
   function changeWeek(
     monday: Date
   ) {
-    setSelectedMonday(monday);
+    setSelectedMonday(
+      monday
+    );
 
     setSearchParams({
-      week: formatWeekStart(
-        monday
-      ),
+      week:
+        formatWeekStart(
+          monday
+        ),
     });
   }
 
@@ -275,10 +325,13 @@ export default function HomePage() {
       );
 
     previous.setDate(
-      previous.getDate() - 7
+      previous.getDate() -
+        7
     );
 
-    changeWeek(previous);
+    changeWeek(
+      previous
+    );
   }
 
   function goToNextWeek() {
@@ -288,7 +341,8 @@ export default function HomePage() {
       );
 
     next.setDate(
-      next.getDate() + 7
+      next.getDate() +
+        7
     );
 
     changeWeek(next);
@@ -313,20 +367,25 @@ export default function HomePage() {
   function handleDayClick(
     index: number
   ) {
-    const day = DAYS[index];
+    const day =
+      DAYS[index];
 
     const mealId =
       weeklyMenu[day];
 
     if (!mealId) {
-      openRecipeSelector(day);
+      openRecipeSelector(
+        day
+      );
+
       return;
     }
 
     const meal =
       meals.find(
         (item) =>
-          item.id === mealId
+          item.id ===
+          mealId
       );
 
     if (meal) {
@@ -345,11 +404,15 @@ export default function HomePage() {
       null
     );
 
-    setSelectedMealDay(null);
+    setSelectedMealDay(
+      null
+    );
   }
 
   function changeCurrentMeal() {
-    if (!selectedMealDay) {
+    if (
+      !selectedMealDay
+    ) {
       return;
     }
 
@@ -358,11 +421,15 @@ export default function HomePage() {
 
     closeMealDetails();
 
-    openRecipeSelector(day);
+    openRecipeSelector(
+      day
+    );
   }
 
   async function removeCurrentMeal() {
-    if (!selectedMealDay) {
+    if (
+      !selectedMealDay
+    ) {
       return;
     }
 
@@ -371,7 +438,9 @@ export default function HomePage() {
 
     closeMealDetails();
 
-    await removeMeal(day);
+    await removeMeal(
+      day
+    );
   }
 
   async function confirmClearWeek() {
@@ -405,8 +474,12 @@ export default function HomePage() {
 
       <FastingSummary />
 
+      <FastingWeekProgress />
+
       <WeekNavigator
-        label={weekLabel}
+        label={
+          weekLabel
+        }
         plannedCount={
           selectedMeals.length
         }
@@ -447,7 +520,9 @@ export default function HomePage() {
       )}
 
       <ShoppingSummary
-        itemCount={itemCount}
+        itemCount={
+          itemCount
+        }
         onClick={() =>
           setShowShoppingList(
             true
@@ -464,7 +539,9 @@ export default function HomePage() {
               onClick={
                 confirmClearWeek
               }
-              disabled={saving}
+              disabled={
+                saving
+              }
               className="w-full py-2 text-center text-[11px] font-medium text-[#A0968C] transition hover:text-[#D96536] disabled:opacity-50"
             >
               Vaciar semana
