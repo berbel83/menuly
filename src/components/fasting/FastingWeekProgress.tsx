@@ -6,6 +6,10 @@ import {
 } from "react";
 
 import {
+  Link,
+} from "react-router-dom";
+
+import {
   getMonday,
   loadCurrentWeekFastingHistory,
   type FastingHistoryEntry,
@@ -173,11 +177,6 @@ export default function FastingWeekProgress() {
                   )
               );
 
-            /*
-             * Si hubiese más de un ayuno
-             * terminado el mismo día,
-             * mostramos el más reciente.
-             */
             const entry =
               entries.length > 0
                 ? entries[
@@ -229,10 +228,6 @@ export default function FastingWeekProgress() {
         return 0;
       }
 
-      /*
-       * Si hoy aún no hay ayuno,
-       * empezamos a contar desde ayer.
-       */
       let index =
         days[todayIndex].entry
           ? todayIndex
@@ -418,6 +413,19 @@ export default function FastingWeekProgress() {
           {errorMessage}
         </p>
       )}
+
+      <Link
+        to="/fasting/history"
+        className="mt-4 flex items-center justify-between border-t border-[#EEE6DD] pt-3 text-xs font-semibold text-[#667956]"
+      >
+        <span>
+          Ver historial completo
+        </span>
+
+        <span className="text-lg font-light text-[#9A9086]">
+          ›
+        </span>
+      </Link>
     </section>
   );
 }

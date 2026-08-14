@@ -33,8 +33,7 @@ async function getCurrentPushEndpoint() {
 export function getMonday(date: Date) {
   const result = new Date(date);
 
-  const day =
-    result.getDay();
+  const day = result.getDay();
 
   const difference =
     day === 0
@@ -42,8 +41,7 @@ export function getMonday(date: Date) {
       : 1 - day;
 
   result.setDate(
-    result.getDate() +
-      difference
+    result.getDate() + difference
   );
 
   result.setHours(
@@ -56,6 +54,28 @@ export function getMonday(date: Date) {
   return result;
 }
 
+function mapHistoryEntry(entry: {
+  id: string;
+  started_at: string;
+  ended_at: string;
+  target_hours: number | string;
+  actual_minutes: number;
+  completed_target: boolean;
+}): FastingHistoryEntry {
+  return {
+    id: entry.id,
+    startedAt: entry.started_at,
+    endedAt: entry.ended_at,
+    targetHours: Number(
+      entry.target_hours
+    ),
+    actualMinutes:
+      entry.actual_minutes,
+    completedTarget:
+      entry.completed_target,
+  };
+}
+
 export async function loadCurrentWeekFastingHistory() {
   const endpoint =
     await getCurrentPushEndpoint();
@@ -65,9 +85,7 @@ export async function loadCurrentWeekFastingHistory() {
   }
 
   const monday =
-    getMonday(
-      new Date()
-    );
+    getMonday(new Date());
 
   const nextMonday =
     new Date(monday);
@@ -117,23 +135,53 @@ export async function loadCurrentWeekFastingHistory() {
     );
   }
 
-  return (
-    data ?? []
-  ).map(
-    (entry) => ({
-      id: entry.id,
-      startedAt:
-        entry.started_at,
-      endedAt:
-        entry.ended_at,
-      targetHours:
-        Number(
-          entry.target_hours
-        ),
-      actualMinutes:
-        entry.actual_minutes,
-      completedTarget:
-        entry.completed_target,
-    })
-  ) as FastingHistoryEntry[];
+  return (data ?? []).map(
+    mapHistoryEntry
+  );
+}
+
+export async function loadFastingHistory() {
+  const endpoint =
+    await getCurrentPushEndpoint();
+
+  if (!endpoint) {
+    return [];
+  }
+
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from("fasting_history")
+      .select(
+        `
+          id,
+          started_at,
+          ended_at,
+          target_hours,
+          actual_minutes,
+          completed_target
+        `
+      )
+      .eq(
+        "subscription_endpoint",
+        endpoint
+      )
+      .order(
+        "ended_at",
+        {
+          ascending: false,
+        }
+      );
+
+  if (error) {
+    throw new Error(
+      `No se pudo cargar el historial: ${error.message}`
+    );
+  }
+
+  return (data ?? []).map(
+    mapHistoryEntry
+  );
 }
