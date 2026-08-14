@@ -11,13 +11,13 @@ interface MealListProps {
 }
 
 const accents = [
-  "#E86632",
-  "#536B4A",
-  "#D5A93C",
-  "#A55749",
-  "#6E7A4A",
-  "#D9784A",
-  "#7B7067",
+  "#FF6B2C",
+  "#4D7C3A",
+  "#F3C84B",
+  "#FF876B",
+  "#4D7C3A",
+  "#FF6B2C",
+  "#DDA83A",
 ];
 
 export default function MealList({
@@ -25,32 +25,28 @@ export default function MealList({
   onSelectDay,
 }: MealListProps) {
   return (
-    <section className="px-5 pb-5">
-      <div className="mb-3 flex items-end justify-between gap-4 px-1">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E86632]">
-            Comidas
-          </p>
+    <section className="px-4 pb-3">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="font-serif text-[21px] font-semibold text-[#243025]">
+          Comidas
+        </h3>
 
-          <h3 className="mt-1 font-serif text-[23px] font-semibold tracking-[-0.03em] text-[#2C332B]">
-            Tu semana
-          </h3>
-        </div>
-
-        <span className="rounded-full bg-[#F6E5DC] px-3 py-1.5 text-[10px] font-bold text-[#B85A35]">
-          7 días
+        <span className="rounded-full bg-[#DDECBF] px-3 py-1 text-[9px] font-bold text-[#42652F]">
+          ESTA SEMANA
         </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {mealsByDay.map((item, index) => (
           <MealRow
             key={`${item.dayShort}-${item.dayNumber}`}
             dayShort={item.dayShort}
             dayNumber={item.dayNumber}
             meal={item.meal}
-            accentColor={accents[index % accents.length]}
-            onClick={() => onSelectDay(index)}
+            accentColor={accents[index]}
+            onClick={() =>
+              onSelectDay(index)
+            }
           />
         ))}
       </div>
