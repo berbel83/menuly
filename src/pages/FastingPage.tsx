@@ -25,6 +25,16 @@ import {
   subscribeToPush,
 } from "../services/notificationService";
 
+import {
+  cancelFastCompletedNotification,
+  scheduleFastCompletedNotification,
+} from "../services/fastingNotificationService";
+
+import {
+  cancelStartReminder,
+  scheduleStartReminder,
+} from "../services/startReminderService";
+
 function formatClock(date: Date) {
   return date.toLocaleTimeString("es-ES", {
     hour: "2-digit",
@@ -62,6 +72,37 @@ function formatDuration(milliseconds: number) {
   };
 }
 
+function calculateEstimatedEnd(
+  startTime: string,
+  fastingHours: number
+) {
+  const [hours, minutes] =
+    startTime.split(":").map(Number);
+
+  const start = new Date();
+
+  start.setHours(
+    hours,
+    minutes,
+    0,
+    0
+  );
+
+  const end = new Date(
+    start.getTime() +
+      fastingHours * 60 * 60 * 1000
+  );
+
+  const isNextDay =
+    end.getDate() !==
+    start.getDate();
+
+  return {
+    time: formatClock(end),
+    isNextDay,
+  };
+}
+
 type NotificationState =
   | "granted"
   | "denied"
@@ -85,7 +126,9 @@ export default function FastingPage() {
   const [
     notificationPermission,
     setNotificationPermission,
-  ] = useState<NotificationState>("default");
+  ] = useState<NotificationState>(
+    "default"
+  );
 
   const [
     requestingNotifications,
@@ -95,7 +138,33 @@ export default function FastingPage() {
   const [
     notificationError,
     setNotificationError,
-  ] = useState<string | null>(null);
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    fastingActionLoading,
+    setFastingActionLoading,
+  ] = useState(false);
+
+  const [
+    fastingActionError,
+    setFastingActionError,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    reminderActionLoading,
+    setReminderActionLoading,
+  ] = useState(false);
+
+  const [
+    reminderActionError,
+    setReminderActionError,
+  ] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     setSettings(
@@ -106,11 +175,8 @@ export default function FastingPage() {
       loadActiveFast()
     );
 
-    const permission =
-      getNotificationPermission();
-
     setNotificationPermission(
-      permission
+      getNotificationPermission()
     );
   }, []);
 
@@ -134,16 +200,30 @@ export default function FastingPage() {
   const fastingHours =
     getFastingHours(settings);
 
-  const progress = useMemo(() => {
-    if (!activeFast) {
-      return 0;
-    }
-
-    return getFastProgress(
-      activeFast,
-      now
+  const estimatedEnd =
+    useMemo(
+      () =>
+        calculateEstimatedEnd(
+          settings.startReminderTime,
+          fastingHours
+        ),
+      [
+        settings.startReminderTime,
+        fastingHours,
+      ]
     );
-  }, [activeFast, now]);
+
+  const progress =
+    useMemo(() => {
+      if (!activeFast) {
+        return 0;
+      }
+
+      return getFastProgress(
+        activeFast,
+        now
+      );
+    }, [activeFast, now]);
 
   const remaining =
     useMemo(() => {
@@ -170,43 +250,214 @@ export default function FastingPage() {
         now.getTime()
       : false;
 
-  function updatePreset(
+  function persistSettings(
+    next: FastingSettings
+  ) {
+    setSettings(next);
+    saveFastingSettings(next);
+  }
+
+  async function syncStartReminder(
+    next: FastingSettings
+  ) {
+    if (
+      !next.startReminderEnabled
+    ) {
+      return;
+    }
+
+    if (
+      notificationPermission !==
+      "granted"
+    ) {
+      setReminderActionError(
+        "Activa primero las notificaciones para poder programar el aviso diario."
+      );
+
+      return;
+    }
+
+    try {
+      setReminderActionLoading(
+        true
+      );
+
+      setReminderActionError(
+        null
+      );
+
+      await scheduleStartReminder(
+        next.startReminderTime,
+        getFastingHours(next)
+      );
+    } catch (error) {
+      setReminderActionError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo programar el recordatorio."
+      );
+    } finally {
+      setReminderActionLoading(
+        false
+      );
+    }
+  }
+
+  async function updatePreset(
     preset: FastingPreset
   ) {
-    const nextSettings = {
+    const next: FastingSettings = {
       ...settings,
       preset,
     };
 
-    setSettings(
-      nextSettings
-    );
+    persistSettings(next);
 
-    saveFastingSettings(
-      nextSettings
-    );
+    if (
+      next.startReminderEnabled
+    ) {
+      await syncStartReminder(
+        next
+      );
+    }
   }
 
-  function updateCustomHours(
+  async function updateCustomHours(
     hours: number
   ) {
-    const safeHours = Math.min(
-      Math.max(hours, 1),
-      48
-    );
+    const safeHours =
+      Math.min(
+        Math.max(hours, 1),
+        48
+      );
 
-    const nextSettings = {
-      preset: "custom" as const,
+    const next: FastingSettings = {
+      ...settings,
+      preset: "custom",
       customHours: safeHours,
     };
 
-    setSettings(
-      nextSettings
+    persistSettings(next);
+
+    if (
+      next.startReminderEnabled
+    ) {
+      await syncStartReminder(
+        next
+      );
+    }
+  }
+
+  async function toggleStartReminder() {
+    setReminderActionError(
+      null
     );
 
-    saveFastingSettings(
-      nextSettings
-    );
+    if (
+      settings.startReminderEnabled
+    ) {
+      const next: FastingSettings = {
+        ...settings,
+        startReminderEnabled:
+          false,
+      };
+
+      persistSettings(next);
+
+      try {
+        setReminderActionLoading(
+          true
+        );
+
+        await cancelStartReminder();
+      } catch (error) {
+        setReminderActionError(
+          error instanceof Error
+            ? error.message
+            : "No se pudo cancelar el recordatorio."
+        );
+      } finally {
+        setReminderActionLoading(
+          false
+        );
+      }
+
+      return;
+    }
+
+    if (
+      notificationPermission !==
+      "granted"
+    ) {
+      setReminderActionError(
+        "Antes debes activar las notificaciones de Compausa."
+      );
+
+      return;
+    }
+
+    const next: FastingSettings = {
+      ...settings,
+      startReminderEnabled:
+        true,
+    };
+
+    persistSettings(next);
+
+    try {
+      setReminderActionLoading(
+        true
+      );
+
+      await scheduleStartReminder(
+        next.startReminderTime,
+        getFastingHours(next)
+      );
+    } catch (error) {
+      /*
+       * Si falla al programarlo,
+       * devolvemos el interruptor
+       * al estado apagado.
+       */
+      const rollback: FastingSettings = {
+        ...next,
+        startReminderEnabled:
+          false,
+      };
+
+      persistSettings(
+        rollback
+      );
+
+      setReminderActionError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo activar el recordatorio."
+      );
+    } finally {
+      setReminderActionLoading(
+        false
+      );
+    }
+  }
+
+  async function updateReminderTime(
+    value: string
+  ) {
+    const next: FastingSettings = {
+      ...settings,
+      startReminderTime: value,
+    };
+
+    persistSettings(next);
+
+    if (
+      next.startReminderEnabled
+    ) {
+      await syncStartReminder(
+        next
+      );
+    }
   }
 
   async function handleEnableNotifications() {
@@ -232,7 +483,9 @@ export default function FastingPage() {
         permission
       );
 
-      if (permission !== "granted") {
+      if (
+        permission !== "granted"
+      ) {
         return;
       }
 
@@ -250,16 +503,46 @@ export default function FastingPage() {
     }
   }
 
-  function handleStartFast() {
-    const fast = startFast(
-      fastingHours
-    );
+  async function handleStartFast() {
+    try {
+      setFastingActionLoading(
+        true
+      );
 
-    setActiveFast(fast);
-    setNow(new Date());
+      setFastingActionError(
+        null
+      );
+
+      const fast =
+        startFast(
+          fastingHours
+        );
+
+      setActiveFast(fast);
+      setNow(new Date());
+
+      try {
+        await scheduleFastCompletedNotification(
+          fast
+        );
+      } catch (error) {
+        console.error(
+          "No se pudo programar la notificación de finalización:",
+          error
+        );
+
+        setFastingActionError(
+          "El ayuno ha empezado, pero no se pudo programar el aviso de finalización."
+        );
+      }
+    } finally {
+      setFastingActionLoading(
+        false
+      );
+    }
   }
 
-  function handleStopFast() {
+  async function handleStopFast() {
     const confirmed =
       window.confirm(
         completed
@@ -271,8 +554,32 @@ export default function FastingPage() {
       return;
     }
 
-    stopFast();
-    setActiveFast(null);
+    try {
+      setFastingActionLoading(
+        true
+      );
+
+      setFastingActionError(
+        null
+      );
+
+      try {
+        await cancelFastCompletedNotification();
+      } catch (error) {
+        console.error(
+          "No se pudo cancelar la notificación pendiente:",
+          error
+        );
+      }
+
+      stopFast();
+      setActiveFast(null);
+      setNow(new Date());
+    } finally {
+      setFastingActionLoading(
+        false
+      );
+    }
   }
 
   return (
@@ -282,7 +589,6 @@ export default function FastingPage() {
           <Link
             to="/"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#E2D9CF] bg-[#FFFDFC] text-[24px] font-light text-[#5E574F]"
-            aria-label="Volver"
           >
             ‹
           </Link>
@@ -292,99 +598,76 @@ export default function FastingPage() {
               Compausa
             </p>
 
-            <h1 className="mt-0.5 font-serif text-[28px] font-semibold tracking-[-0.03em] text-[#25251F]">
+            <h1 className="font-serif text-[28px] font-semibold text-[#25251F]">
               Ayuno
             </h1>
           </div>
         </header>
 
         <main className="px-5 py-5">
-          {notificationPermission !== "granted" && (
+          {notificationPermission !==
+            "granted" && (
             <section className="mb-5 rounded-[22px] border border-[#DDE3D6] bg-[#F6F8F3] p-4">
-              <div className="flex items-start gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#E7EDE1] text-[#627353]">
-                  <svg
-                    width="19"
-                    height="19"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                </div>
+              <p className="font-serif text-[18px] font-semibold text-[#30342D]">
+                Avisos de ayuno
+              </p>
 
-                <div className="min-w-0 flex-1">
-                  <p className="font-serif text-[18px] font-semibold text-[#30342D]">
-                    Avisos de ayuno
+              {notificationPermission ===
+              "default" ? (
+                <>
+                  <p className="mt-1 text-xs leading-5 text-[#81766D]">
+                    Activa las
+                    notificaciones para
+                    recibir los avisos de
+                    inicio y fin del ayuno.
                   </p>
 
-                  {notificationPermission === "denied" ? (
-                    <p className="mt-1 text-xs leading-5 text-[#81766D]">
-                      Las notificaciones están bloqueadas.
-                      Tendrás que activarlas desde los ajustes
-                      del navegador o del teléfono.
-                    </p>
-                  ) : notificationPermission === "unsupported" ? (
-                    <p className="mt-1 text-xs leading-5 text-[#81766D]">
-                      Este dispositivo o navegador no permite
-                      usar las notificaciones de Compausa.
-                    </p>
-                  ) : (
-                    <>
-                      <p className="mt-1 text-xs leading-5 text-[#81766D]">
-                        Actívalas para que Compausa pueda
-                        avisarte cuando completes tu ayuno.
-                      </p>
+                  <button
+                    type="button"
+                    onClick={
+                      handleEnableNotifications
+                    }
+                    disabled={
+                      requestingNotifications
+                    }
+                    className="mt-3 rounded-xl bg-[#3F543E] px-4 py-2.5 text-xs font-bold text-white"
+                  >
+                    {requestingNotifications
+                      ? "Activando..."
+                      : "Activar notificaciones"}
+                  </button>
+                </>
+              ) : (
+                <p className="mt-1 text-xs text-[#81766D]">
+                  Las notificaciones no
+                  están disponibles o
+                  están bloqueadas.
+                </p>
+              )}
 
-                      <button
-                        type="button"
-                        onClick={
-                          handleEnableNotifications
-                        }
-                        disabled={
-                          requestingNotifications
-                        }
-                        className="mt-3 rounded-xl bg-[#3F543E] px-4 py-2.5 text-xs font-bold text-white transition active:scale-[0.98] disabled:opacity-50"
-                      >
-                        {requestingNotifications
-                          ? "Activando..."
-                          : "Activar notificaciones"}
-                      </button>
-                    </>
-                  )}
-
-                  {notificationError && (
-                    <p className="mt-3 text-xs leading-5 text-red-600">
-                      {notificationError}
-                    </p>
-                  )}
-                </div>
-              </div>
+              {notificationError && (
+                <p className="mt-3 text-xs text-red-600">
+                  {notificationError}
+                </p>
+              )}
             </section>
           )}
 
-          {notificationPermission === "granted" && (
-            <div className="mb-5 flex items-center gap-2 rounded-xl bg-[#EEF3E9] px-3 py-2.5 text-xs font-semibold text-[#667956]">
-              <span>✓</span>
-              <span>
-                Notificaciones activadas
-              </span>
+          {notificationPermission ===
+            "granted" && (
+            <div className="mb-5 rounded-xl bg-[#EEF3E9] px-3 py-2.5 text-xs font-semibold text-[#667956]">
+              ✓ Notificaciones activadas
             </div>
           )}
 
           {!activeFast ? (
             <>
-              <section className="rounded-[24px] border border-[#E3D9CE] bg-[#FFFDFC] p-5 shadow-[0_8px_25px_rgba(80,60,42,0.05)]">
+              <section className="rounded-[24px] border border-[#E3D9CE] bg-[#FFFDFC] p-5">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A19589]">
                   Tu protocolo
                 </p>
 
-                <h2 className="mt-2 font-serif text-[26px] font-semibold text-[#292923]">
+                <h2 className="mt-2 font-serif text-[26px] font-semibold">
                   ¿Cuánto quieres ayunar?
                 </h2>
 
@@ -393,105 +676,193 @@ export default function FastingPage() {
                     "14:10",
                     "16:8",
                     "18:6",
-                  ].map((preset) => {
-                    const active =
-                      settings.preset ===
-                      preset;
-
-                    return (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() =>
-                          updatePreset(
-                            preset as FastingPreset
-                          )
-                        }
-                        className={`rounded-2xl px-3 py-3 text-sm font-semibold transition ${
-                          active
-                            ? "bg-[#E86632] text-white"
-                            : "border border-[#E2D9CF] bg-[#FBF8F3] text-[#6F675F]"
-                        }`}
-                      >
-                        {preset}
-                      </button>
-                    );
-                  })}
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() =>
+                        updatePreset(
+                          preset as FastingPreset
+                        )
+                      }
+                      className={`rounded-2xl px-3 py-3 text-sm font-semibold ${
+                        settings.preset ===
+                        preset
+                          ? "bg-[#E86632] text-white"
+                          : "border border-[#E2D9CF] bg-[#FBF8F3] text-[#6F675F]"
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="mt-3 rounded-2xl border border-[#E2D9CF] bg-[#FBF8F3] p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-[#39362F]">
-                        Personalizado
-                      </p>
+                <div className="mt-4 rounded-2xl border border-[#E2D9CF] bg-[#FBF8F3] p-4">
+                  <p className="text-sm font-semibold">
+                    Duración personalizada
+                  </p>
 
-                      <p className="mt-1 text-xs text-[#92877D]">
-                        Elige las horas de ayuno.
-                      </p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateCustomHours(
+                          fastingHours - 1
+                        )
+                      }
+                      className="grid h-10 w-10 place-items-center rounded-full border bg-white text-xl"
+                    >
+                      −
+                    </button>
+
+                    <div className="text-center">
+                      <span className="font-serif text-[30px] font-semibold">
+                        {fastingHours}
+                      </span>
+
+                      <span className="ml-1 text-sm text-[#92877D]">
+                        horas
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateCustomHours(
-                            (settings.preset ===
-                            "custom"
-                              ? settings.customHours
-                              : fastingHours) - 1
-                          )
-                        }
-                        className="grid h-9 w-9 place-items-center rounded-full border border-[#DED5CA] bg-white text-lg text-[#5E574F]"
-                      >
-                        −
-                      </button>
-
-                      <div className="min-w-14 text-center">
-                        <span className="font-serif text-[24px] font-semibold text-[#2D2A26]">
-                          {settings.preset ===
-                          "custom"
-                            ? settings.customHours
-                            : fastingHours}
-                        </span>
-
-                        <span className="ml-1 text-xs text-[#92877D]">
-                          h
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateCustomHours(
-                            (settings.preset ===
-                            "custom"
-                              ? settings.customHours
-                              : fastingHours) + 1
-                          )
-                        }
-                        className="grid h-9 w-9 place-items-center rounded-full border border-[#DED5CA] bg-white text-lg text-[#5E574F]"
-                      >
-                        +
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateCustomHours(
+                          fastingHours + 1
+                        )
+                      }
+                      className="grid h-10 w-10 place-items-center rounded-full border bg-white text-xl"
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
               </section>
 
-              <section className="mt-5 rounded-[24px] bg-[#2F312B] p-5 text-white shadow-[0_14px_35px_rgba(47,49,43,0.15)]">
+              <section className="mt-5 rounded-[24px] border border-[#DDE3D6] bg-[#F6F8F3] p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7A8B65]">
+                      Recordatorio diario
+                    </p>
+
+                    <h3 className="mt-1 font-serif text-[22px] font-semibold text-[#30342D]">
+                      Avísame para empezar
+                    </h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={
+                      toggleStartReminder
+                    }
+                    disabled={
+                      reminderActionLoading
+                    }
+                    className={`relative h-7 w-12 rounded-full transition disabled:opacity-50 ${
+                      settings.startReminderEnabled
+                        ? "bg-[#7A8B65]"
+                        : "bg-[#D6D0C8]"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${
+                        settings.startReminderEnabled
+                          ? "left-6"
+                          : "left-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {settings.startReminderEnabled && (
+                  <>
+                    <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl bg-[#FFFDFC] px-4 py-4">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#39362F]">
+                          Hora habitual
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-[#92877D]">
+                          Te avisaremos cada día.
+                          El ayuno no empezará
+                          automáticamente.
+                        </p>
+                      </div>
+
+                      <input
+                        type="time"
+                        value={
+                          settings.startReminderTime
+                        }
+                        onChange={(event) =>
+                          updateReminderTime(
+                            event.target.value
+                          )
+                        }
+                        disabled={
+                          reminderActionLoading
+                        }
+                        className="shrink-0 rounded-xl border border-[#DED5CA] bg-white px-3 py-2 text-[17px] font-semibold text-[#2D2A26] disabled:opacity-50"
+                      />
+                    </div>
+
+                    <div className="mt-3 rounded-2xl bg-[#EAF0E5] px-4 py-4">
+                      <p className="text-xs leading-5 text-[#728064]">
+                        Si empezaras a las{" "}
+                        <strong>
+                          {
+                            settings.startReminderTime
+                          }
+                        </strong>{" "}
+                        y haces{" "}
+                        <strong>
+                          {fastingHours} h
+                        </strong>
+                        , terminarías
+                        aproximadamente{" "}
+                        {estimatedEnd.isNextDay &&
+                          "mañana "}
+                        a las{" "}
+                        <strong>
+                          {
+                            estimatedEnd.time
+                          }
+                        </strong>
+                        .
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {reminderActionLoading && (
+                  <p className="mt-3 text-xs font-medium text-[#728064]">
+                    Guardando recordatorio...
+                  </p>
+                )}
+
+                {reminderActionError && (
+                  <p className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs leading-5 text-red-600">
+                    {reminderActionError}
+                  </p>
+                )}
+              </section>
+
+              <section className="mt-5 rounded-[24px] bg-[#2F312B] p-5 text-white">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">
-                  Inicio rápido
+                  Inicio real
                 </p>
 
                 <h2 className="mt-2 font-serif text-[27px] font-semibold">
-                  Empieza cuando tú quieras
+                  Empieza cuando estés listo
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-white/70">
-                  Compausa guardará la hora exacta de inicio
-                  y calculará automáticamente cuándo termina
-                  tu ayuno.
+                  La hora programada solo
+                  sirve como recordatorio.
+                  El contador comenzará
+                  cuando pulses este botón.
                 </p>
 
                 <button
@@ -499,87 +870,59 @@ export default function FastingPage() {
                   onClick={
                     handleStartFast
                   }
-                  className="mt-5 w-full rounded-2xl bg-[#E86632] px-4 py-4 text-sm font-bold text-white transition active:scale-[0.99]"
+                  disabled={
+                    fastingActionLoading
+                  }
+                  className="mt-5 w-full rounded-2xl bg-[#E86632] px-4 py-4 text-sm font-bold text-white disabled:opacity-50"
                 >
-                  Empezar a ayunar ahora
+                  {fastingActionLoading
+                    ? "Empezando..."
+                    : "Empezar a ayunar ahora"}
                 </button>
 
-                <p className="mt-3 text-center text-xs text-white/50">
-                  Ayuno seleccionado: {fastingHours} horas
-                </p>
+                {fastingActionError && (
+                  <p className="mt-3 text-xs text-[#FFD8CC]">
+                    {fastingActionError}
+                  </p>
+                )}
               </section>
             </>
           ) : (
             <>
               <section
-                className={`rounded-[28px] border p-5 shadow-[0_12px_35px_rgba(80,60,42,0.07)] ${
+                className={`rounded-[28px] border p-5 ${
                   completed
                     ? "border-[#C9D4BC] bg-[#F6F9F2]"
                     : "border-[#E3D9CE] bg-[#FFFDFC]"
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p
-                      className={`text-[10px] font-bold uppercase tracking-[0.18em] ${
-                        completed
-                          ? "text-[#6F845A]"
-                          : "text-[#E86632]"
-                      }`}
-                    >
-                      {completed
-                        ? "Ayuno completado"
-                        : "Ayunando"}
-                    </p>
+                <p
+                  className={`text-[10px] font-bold uppercase tracking-[0.18em] ${
+                    completed
+                      ? "text-[#6F845A]"
+                      : "text-[#E86632]"
+                  }`}
+                >
+                  {completed
+                    ? "Ayuno completado"
+                    : "Ayunando"}
+                </p>
 
-                    <h2 className="mt-2 font-serif text-[31px] font-semibold tracking-[-0.03em] text-[#25251F]">
-                      {activeFast.fastingHours} horas
-                    </h2>
-                  </div>
+                <h2 className="mt-2 font-serif text-[31px] font-semibold">
+                  {activeFast.fastingHours} horas
+                </h2>
 
+                <div className="mt-6 h-2.5 overflow-hidden rounded-full bg-[#EAE3DA]">
                   <div
-                    className={`grid h-12 w-12 place-items-center rounded-full text-lg ${
+                    className={`h-full rounded-full ${
                       completed
-                        ? "bg-[#DCE6D2] text-[#60764C]"
-                        : "bg-[#F4E5DD] text-[#E86632]"
+                        ? "bg-[#7A8B65]"
+                        : "bg-[#E86632]"
                     }`}
-                  >
-                    {completed
-                      ? "✓"
-                      : "⏱"}
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <div className="h-2.5 overflow-hidden rounded-full bg-[#EAE3DA]">
-                    <div
-                      className={`h-full rounded-full transition-all duration-1000 ${
-                        completed
-                          ? "bg-[#7A8B65]"
-                          : "bg-[#E86632]"
-                      }`}
-                      style={{
-                        width: `${progress * 100}%`,
-                      }}
-                    />
-                  </div>
-
-                  <div className="mt-2 flex justify-between text-xs text-[#938A82]">
-                    <span>
-                      Inicio
-                    </span>
-
-                    <span>
-                      {Math.round(
-                        progress * 100
-                      )}
-                      %
-                    </span>
-
-                    <span>
-                      Fin
-                    </span>
-                  </div>
+                    style={{
+                      width: `${progress * 100}%`,
+                    }}
+                  />
                 </div>
 
                 {!completed ? (
@@ -588,13 +931,13 @@ export default function FastingPage() {
                       Tiempo restante
                     </p>
 
-                    <p className="mt-2 font-serif text-[46px] font-semibold leading-none tracking-[-0.04em] text-[#25251F]">
+                    <p className="mt-2 font-serif text-[46px] font-semibold">
                       {remaining.hours}
-                      <span className="text-[20px] text-[#8C837A]">
+                      <span className="text-[20px]">
                         h
                       </span>{" "}
                       {remaining.minutes}
-                      <span className="text-[20px] text-[#8C837A]">
+                      <span className="text-[20px]">
                         m
                       </span>
                     </p>
@@ -604,20 +947,16 @@ export default function FastingPage() {
                     <p className="font-serif text-[23px] font-semibold text-[#536647]">
                       Ya puedes comer
                     </p>
-
-                    <p className="mt-1 text-sm text-[#708064]">
-                      Has completado tu objetivo.
-                    </p>
                   </div>
                 )}
 
                 <div className="mt-7 grid grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-[#F5F0E9] px-4 py-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9B9085]">
+                    <p className="text-[10px] uppercase text-[#9B9085]">
                       Empezaste
                     </p>
 
-                    <p className="mt-2 text-sm font-semibold text-[#3A3732]">
+                    <p className="mt-2 text-sm font-semibold">
                       {formatDateTime(
                         activeFast.startAt
                       )}
@@ -625,11 +964,11 @@ export default function FastingPage() {
                   </div>
 
                   <div className="rounded-2xl bg-[#F5F0E9] px-4 py-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9B9085]">
+                    <p className="text-[10px] uppercase text-[#9B9085]">
                       Objetivo
                     </p>
 
-                    <p className="mt-2 text-sm font-semibold text-[#3A3732]">
+                    <p className="mt-2 text-sm font-semibold">
                       {formatDateTime(
                         activeFast.targetEndAt
                       )}
@@ -643,13 +982,18 @@ export default function FastingPage() {
                 onClick={
                   handleStopFast
                 }
-                className={`mt-5 w-full rounded-2xl px-4 py-4 text-sm font-semibold transition ${
+                disabled={
+                  fastingActionLoading
+                }
+                className={`mt-5 w-full rounded-2xl px-4 py-4 text-sm font-semibold disabled:opacity-50 ${
                   completed
                     ? "bg-[#7A8B65] text-white"
                     : "border border-[#E6CFC5] bg-[#FFF9F6] text-[#A34F34]"
                 }`}
               >
-                {completed
+                {fastingActionLoading
+                  ? "Procesando..."
+                  : completed
                   ? "Finalizar ayuno"
                   : "Terminar ayuno antes"}
               </button>

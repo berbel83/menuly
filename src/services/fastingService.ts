@@ -13,6 +13,10 @@ export interface ActiveFast {
 export interface FastingSettings {
   preset: FastingPreset;
   customHours: number;
+
+  // Recordatorio habitual de inicio
+  startReminderEnabled: boolean;
+  startReminderTime: string;
 }
 
 const ACTIVE_FAST_KEY =
@@ -24,6 +28,9 @@ const FASTING_SETTINGS_KEY =
 export const DEFAULT_FASTING_SETTINGS: FastingSettings = {
   preset: "16:8",
   customHours: 16,
+
+  startReminderEnabled: false,
+  startReminderTime: "20:30",
 };
 
 export function getFastingHours(
@@ -59,7 +66,7 @@ export function loadFastingSettings(): FastingSettings {
 
     const parsed = JSON.parse(
       stored
-    ) as FastingSettings;
+    ) as Partial<FastingSettings>;
 
     return {
       preset:
@@ -69,6 +76,14 @@ export function loadFastingSettings(): FastingSettings {
       customHours:
         parsed.customHours ??
         DEFAULT_FASTING_SETTINGS.customHours,
+
+      startReminderEnabled:
+        parsed.startReminderEnabled ??
+        DEFAULT_FASTING_SETTINGS.startReminderEnabled,
+
+      startReminderTime:
+        parsed.startReminderTime ??
+        DEFAULT_FASTING_SETTINGS.startReminderTime,
     };
   } catch {
     return DEFAULT_FASTING_SETTINGS;

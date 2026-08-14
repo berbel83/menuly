@@ -12,6 +12,11 @@ import {
   type ActiveFast,
 } from "../../services/fastingService";
 
+import {
+  cancelFastCompletedNotification,
+  scheduleFastCompletedNotification,
+} from "../../services/fastingNotificationService";
+
 function formatRemaining(milliseconds: number) {
   const totalMinutes = Math.max(
     0,
@@ -37,6 +42,12 @@ export default function FastingSummary() {
 
   const [now, setNow] =
     useState(() => new Date());
+
+  const [actionError, setActionError] =
+    useState<string | null>(null);
+
+  const [actionLoading, setActionLoading] =
+    useState(false);
 
   const settings = useMemo(
     () => loadFastingSettings(),
@@ -75,14 +86,34 @@ export default function FastingSummary() {
     activeFast !== null &&
     new Date(activeFast.targetEndAt).getTime() <= now.getTime();
 
-  function handleStartNow() {
-    const fast = startFast(fastingHours);
+  async function handleStartNow() {
+    try {
+      setActionLoading(true);
+      setActionError(null);
 
-    setActiveFast(fast);
-    setNow(new Date());
+      const fast = startFast(fastingHours);
+
+      setActiveFast(fast);
+      setNow(new Date());
+
+      try {
+        await scheduleFastCompletedNotification(fast);
+      } catch (error) {
+        console.error(
+          "No se pudo programar la notificación de fin de ayuno:",
+          error
+        );
+
+        setActionError(
+          "El ayuno ha empezado, pero no se pudo programar el aviso de finalización."
+        );
+      }
+    } finally {
+      setActionLoading(false);
+    }
   }
 
-  function handleStopFast() {
+  async function handleStopFast() {
     const confirmed = window.confirm(
       completed
         ? "¿Quieres finalizar este ayuno?"
@@ -93,9 +124,29 @@ export default function FastingSummary() {
       return;
     }
 
-    stopFast();
-    setActiveFast(null);
-    setNow(new Date());
+    try {
+      setActionLoading(true);
+      setActionError(null);
+
+      try {
+        await cancelFastCompletedNotification();
+      } catch (error) {
+        console.error(
+          "No se pudo cancelar la notificación pendiente:",
+          error
+        );
+
+        setActionError(
+          "El ayuno se ha detenido, pero no se pudo cancelar el aviso pendiente."
+        );
+      }
+
+      stopFast();
+      setActiveFast(null);
+      setNow(new Date());
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   if (!activeFast) {
@@ -128,11 +179,20 @@ export default function FastingSummary() {
           <button
             type="button"
             onClick={handleStartNow}
-            className="shrink-0 rounded-xl bg-[#D96536] px-4 py-2.5 text-xs font-bold text-white transition active:scale-[0.97]"
+            disabled={actionLoading}
+            className="shrink-0 rounded-xl bg-[#E86632] px-4 py-2.5 text-xs font-bold text-white transition active:scale-[0.97] disabled:opacity-50"
           >
-            Empezar ahora
+            {actionLoading
+              ? "Empezando..."
+              : "Empezar ahora"}
           </button>
         </div>
+
+        {actionError && (
+          <p className="mt-3 text-xs leading-5 text-red-600">
+            {actionError}
+          </p>
+        )}
       </section>
     );
   }
@@ -155,7 +215,7 @@ export default function FastingSummary() {
               className={`text-[10px] font-bold uppercase tracking-[0.17em] ${
                 completed
                   ? "text-[#70845E]"
-                  : "text-[#D96536]"
+                  : "text-[#E86632]"
               }`}
             >
               {completed
@@ -185,7 +245,7 @@ export default function FastingSummary() {
             className={`h-full rounded-full transition-all duration-1000 ${
               completed
                 ? "bg-[#7A8B65]"
-                : "bg-[#D96536]"
+                : "bg-[#E86632]"
             }`}
             style={{
               width: `${progress * 100}%`,
@@ -212,16 +272,25 @@ export default function FastingSummary() {
         <button
           type="button"
           onClick={handleStopFast}
-          className={`w-full rounded-xl px-3 py-2.5 text-xs font-semibold transition active:scale-[0.99] ${
+          disabled={actionLoading}
+          className={`w-full rounded-xl px-3 py-2.5 text-xs font-semibold transition active:scale-[0.99] disabled:opacity-50 ${
             completed
               ? "bg-[#7A8B65] text-white"
               : "border border-[#E6CFC5] bg-[#FFF9F6] text-[#A34F34]"
           }`}
         >
-          {completed
+          {actionLoading
+            ? "Procesando..."
+            : completed
             ? "Finalizar ayuno"
             : "Terminar ayuno"}
         </button>
+
+        {actionError && (
+          <p className="mt-3 text-xs leading-5 text-red-600">
+            {actionError}
+          </p>
+        )}
       </div>
     </section>
   );
