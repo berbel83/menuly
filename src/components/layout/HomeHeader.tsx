@@ -15,7 +15,7 @@ export default function HomeHeader({
     <header className="px-4 pb-3 pt-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] bg-[#3F6248] p-1.5 shadow-[0_8px_22px_rgba(63,98,72,0.20)]">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] bg-white p-1.5 shadow-[0_8px_22px_rgba(20,34,24,0.22)]">
             <img
               src="/pwa-192x192.png"
               alt="Compausa"
@@ -24,14 +24,14 @@ export default function HomeHeader({
           </div>
 
           <div className="min-w-0">
-            <p className="font-serif text-[27px] font-semibold leading-none tracking-[-0.04em] text-[#263129]">
+            <p className="text-[22px] font-bold uppercase leading-none tracking-[0.08em] text-[#FFF9F3]">
               Compausa
             </p>
 
             <div className="mt-2 flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#E97857]" />
 
-              <p className="truncate text-[11px] font-semibold text-[#7C827A]">
+              <p className="truncate text-[11px] font-semibold text-white/70">
                 {houseName}
               </p>
             </div>
@@ -42,7 +42,7 @@ export default function HomeHeader({
           <button
             type="button"
             onClick={onOpenShopping}
-            className="relative grid h-10 w-10 place-items-center rounded-[14px] bg-white text-[#3F6248] shadow-[0_5px_14px_rgba(52,70,55,0.08)] ring-1 ring-[#DDE5DB] transition active:scale-95"
+            className="relative grid h-10 w-10 place-items-center rounded-[14px] bg-white text-[#3F6248] shadow-[0_5px_14px_rgba(20,34,24,0.16)] transition active:scale-95"
             aria-label="Lista de la compra"
             title="Lista de la compra"
           >
@@ -72,7 +72,7 @@ export default function HomeHeader({
 
           <Link
             to="/settings"
-            className="grid h-10 w-10 place-items-center rounded-[14px] bg-white text-[#3F6248] shadow-[0_5px_14px_rgba(52,70,55,0.08)] ring-1 ring-[#DDE5DB] transition active:scale-95"
+            className="grid h-10 w-10 place-items-center rounded-[14px] bg-white text-[#3F6248] shadow-[0_5px_14px_rgba(20,34,24,0.16)] transition active:scale-95"
             aria-label="Ajustes"
             title="Ajustes"
           >
