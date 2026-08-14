@@ -348,6 +348,25 @@ export default function FastingPage() {
     }
   }
 
+  async function updateReminderTime(
+    value: string
+  ) {
+    const next: FastingSettings = {
+      ...settings,
+      startReminderTime: value,
+    };
+
+    persistSettings(next);
+
+    if (
+      next.startReminderEnabled
+    ) {
+      await syncStartReminder(
+        next
+      );
+    }
+  }
+
   async function toggleStartReminder() {
     setReminderActionError(
       null
@@ -414,11 +433,6 @@ export default function FastingPage() {
         getFastingHours(next)
       );
     } catch (error) {
-      /*
-       * Si falla al programarlo,
-       * devolvemos el interruptor
-       * al estado apagado.
-       */
       const rollback: FastingSettings = {
         ...next,
         startReminderEnabled:
@@ -437,25 +451,6 @@ export default function FastingPage() {
     } finally {
       setReminderActionLoading(
         false
-      );
-    }
-  }
-
-  async function updateReminderTime(
-    value: string
-  ) {
-    const next: FastingSettings = {
-      ...settings,
-      startReminderTime: value,
-    };
-
-    persistSettings(next);
-
-    if (
-      next.startReminderEnabled
-    ) {
-      await syncStartReminder(
-        next
       );
     }
   }
@@ -589,6 +584,7 @@ export default function FastingPage() {
           <Link
             to="/"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#E2D9CF] bg-[#FFFDFC] text-[24px] font-light text-[#5E574F]"
+            aria-label="Volver"
           >
             ‹
           </Link>
@@ -630,7 +626,7 @@ export default function FastingPage() {
                     disabled={
                       requestingNotifications
                     }
-                    className="mt-3 rounded-xl bg-[#3F543E] px-4 py-2.5 text-xs font-bold text-white"
+                    className="mt-3 rounded-xl bg-[#3F543E] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-50"
                   >
                     {requestingNotifications
                       ? "Activando..."
@@ -710,7 +706,7 @@ export default function FastingPage() {
                           fastingHours - 1
                         )
                       }
-                      className="grid h-10 w-10 place-items-center rounded-full border bg-white text-xl"
+                      className="grid h-10 w-10 place-items-center rounded-full border border-[#DED5CA] bg-white text-xl text-[#5E574F]"
                     >
                       −
                     </button>
@@ -732,7 +728,7 @@ export default function FastingPage() {
                           fastingHours + 1
                         )
                       }
-                      className="grid h-10 w-10 place-items-center rounded-full border bg-white text-xl"
+                      className="grid h-10 w-10 place-items-center rounded-full border border-[#DED5CA] bg-white text-xl text-[#5E574F]"
                     >
                       +
                     </button>
@@ -741,15 +737,87 @@ export default function FastingPage() {
               </section>
 
               <section className="mt-5 rounded-[24px] border border-[#DDE3D6] bg-[#F6F8F3] p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7A8B65]">
-                      Recordatorio diario
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7A8B65]">
+                    Recordatorio diario
+                  </p>
+
+                  <h3 className="mt-1 font-serif text-[22px] font-semibold text-[#30342D]">
+                    ¿A qué hora sueles empezar?
+                  </h3>
+
+                  <p className="mt-1 text-xs leading-5 text-[#92877D]">
+                    Elige primero tu hora habitual.
+                    Después puedes activar el aviso diario.
+                  </p>
+                </div>
+
+                <div className="mt-5 rounded-2xl bg-[#FFFDFC] px-4 py-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#39362F]">
+                        Hora habitual
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-[#92877D]">
+                        Esta hora no inicia el ayuno automáticamente.
+                      </p>
+                    </div>
+
+                    <input
+                      type="time"
+                      value={
+                        settings.startReminderTime
+                      }
+                      onChange={(event) =>
+                        updateReminderTime(
+                          event.target.value
+                        )
+                      }
+                      disabled={
+                        reminderActionLoading
+                      }
+                      className="shrink-0 rounded-xl border border-[#DED5CA] bg-white px-3 py-2 text-[17px] font-semibold text-[#2D2A26] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3 rounded-2xl bg-[#EAF0E5] px-4 py-4">
+                  <p className="text-xs leading-5 text-[#728064]">
+                    Si empezaras a las{" "}
+                    <strong>
+                      {
+                        settings.startReminderTime
+                      }
+                    </strong>{" "}
+                    y haces{" "}
+                    <strong>
+                      {fastingHours} h
+                    </strong>
+                    , terminarías aproximadamente{" "}
+                    {estimatedEnd.isNextDay &&
+                      "mañana "}
+                    a las{" "}
+                    <strong>
+                      {
+                        estimatedEnd.time
+                      }
+                    </strong>
+                    .
+                  </p>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-[#DDE3D6] bg-white px-4 py-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#39362F]">
+                      Avísame cada día a esta hora
                     </p>
 
-                    <h3 className="mt-1 font-serif text-[22px] font-semibold text-[#30342D]">
-                      Avísame para empezar
-                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-[#92877D]">
+                      {settings.startReminderEnabled
+                        ? `Recordatorio activo a las ${settings.startReminderTime}.`
+                        : "Recibirás una notificación para decidir si empiezas."}
+                    </p>
                   </div>
 
                   <button
@@ -760,14 +828,19 @@ export default function FastingPage() {
                     disabled={
                       reminderActionLoading
                     }
-                    className={`relative h-7 w-12 rounded-full transition disabled:opacity-50 ${
+                    aria-label={
+                      settings.startReminderEnabled
+                        ? "Desactivar recordatorio diario"
+                        : "Activar recordatorio diario"
+                    }
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-50 ${
                       settings.startReminderEnabled
                         ? "bg-[#7A8B65]"
                         : "bg-[#D6D0C8]"
                     }`}
                   >
                     <span
-                      className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${
+                      className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${
                         settings.startReminderEnabled
                           ? "left-6"
                           : "left-1"
@@ -776,65 +849,18 @@ export default function FastingPage() {
                   </button>
                 </div>
 
-                {settings.startReminderEnabled && (
-                  <>
-                    <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl bg-[#FFFDFC] px-4 py-4">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[#39362F]">
-                          Hora habitual
-                        </p>
+                {settings.startReminderEnabled &&
+                  !reminderActionLoading &&
+                  !reminderActionError && (
+                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-[#E7EFE0] px-3 py-2.5 text-xs font-semibold text-[#60764C]">
+                      <span>✓</span>
 
-                        <p className="mt-1 text-xs leading-5 text-[#92877D]">
-                          Te avisaremos cada día.
-                          El ayuno no empezará
-                          automáticamente.
-                        </p>
-                      </div>
-
-                      <input
-                        type="time"
-                        value={
-                          settings.startReminderTime
-                        }
-                        onChange={(event) =>
-                          updateReminderTime(
-                            event.target.value
-                          )
-                        }
-                        disabled={
-                          reminderActionLoading
-                        }
-                        className="shrink-0 rounded-xl border border-[#DED5CA] bg-white px-3 py-2 text-[17px] font-semibold text-[#2D2A26] disabled:opacity-50"
-                      />
+                      <span>
+                        Recordatorio diario activo ·{" "}
+                        {settings.startReminderTime}
+                      </span>
                     </div>
-
-                    <div className="mt-3 rounded-2xl bg-[#EAF0E5] px-4 py-4">
-                      <p className="text-xs leading-5 text-[#728064]">
-                        Si empezaras a las{" "}
-                        <strong>
-                          {
-                            settings.startReminderTime
-                          }
-                        </strong>{" "}
-                        y haces{" "}
-                        <strong>
-                          {fastingHours} h
-                        </strong>
-                        , terminarías
-                        aproximadamente{" "}
-                        {estimatedEnd.isNextDay &&
-                          "mañana "}
-                        a las{" "}
-                        <strong>
-                          {
-                            estimatedEnd.time
-                          }
-                        </strong>
-                        .
-                      </p>
-                    </div>
-                  </>
-                )}
+                  )}
 
                 {reminderActionLoading && (
                   <p className="mt-3 text-xs font-medium text-[#728064]">
