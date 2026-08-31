@@ -4,6 +4,7 @@ import {
   notificationsSupported,
   subscribeToPush,
 } from "../../services/notificationService";
+import { syncPendingFastingHistory } from "../../services/fastingHistoryService";
 
 export default function PushBootstrap() {
   useEffect(() => {
@@ -18,6 +19,7 @@ export default function PushBootstrap() {
 
       try {
         await subscribeToPush();
+        await syncPendingFastingHistory();
 
         console.log(
           "Suscripción push de Compausa registrada."

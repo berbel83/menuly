@@ -4,7 +4,7 @@ import {
   Routes,
 } from "react-router-dom";
 
-import { useHouse } from "./context/HouseContext";
+import { useHouse } from "./context/useHouse";
 
 import PushBootstrap from "./components/notifications/PushBootstrap";
 

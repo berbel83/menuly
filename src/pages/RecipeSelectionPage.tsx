@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 
 import AppShell from "../components/layout/AppShell";
-import { useHouse } from "../context/HouseContext";
+import { useHouse } from "../context/useHouse";
 import { meals } from "../data/meals";
 import { useWeeklyMenu } from "../hooks/useWeeklyMenu";
 
@@ -20,27 +20,45 @@ function isValidDay(value: string | null): value is Day {
 }
 
 export default function RecipeSelectionPage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { house } = useHouse();
 
   const dayParam = searchParams.get("day");
   const weekStart = searchParams.get("week");
 
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("Todas");
-
   if (!house || !isValidDay(dayParam) || !weekStart) {
     return <Navigate to="/" replace />;
   }
 
-  const selectedDay: Day = dayParam;
+  return (
+    <RecipeSelectionContent
+      houseCode={house.code}
+      selectedDay={dayParam}
+      weekStart={weekStart}
+    />
+  );
+}
+
+interface RecipeSelectionContentProps {
+  houseCode: string;
+  selectedDay: Day;
+  weekStart: string;
+}
+
+function RecipeSelectionContent({
+  houseCode,
+  selectedDay,
+  weekStart,
+}: RecipeSelectionContentProps) {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("Todas");
 
   const {
     selectMeal,
     saving,
   } = useWeeklyMenu(
-    house.code,
+    houseCode,
     weekStart
   );
 

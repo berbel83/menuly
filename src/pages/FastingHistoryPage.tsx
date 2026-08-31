@@ -220,6 +220,12 @@ export default function FastingHistoryPage() {
                             entry.endedAt
                           )}
                         </p>
+
+                        {entry.pendingSync && (
+                          <p className="mt-2 text-[11px] font-semibold text-[#A66A39]">
+                            Pendiente de sincronizar
+                          </p>
+                        )}
                       </div>
 
                       {entry.completedTarget && (

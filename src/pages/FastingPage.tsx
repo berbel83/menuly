@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import AppShell from "../components/layout/AppShell";
 
 import {
-  DEFAULT_FASTING_SETTINGS,
   getFastProgress,
   getFastingHours,
   getRemainingMilliseconds,
@@ -116,12 +115,12 @@ type NotificationState =
 export default function FastingPage() {
   const [settings, setSettings] =
     useState<FastingSettings>(
-      DEFAULT_FASTING_SETTINGS
+      () => loadFastingSettings()
     );
 
   const [activeFast, setActiveFast] =
     useState<ActiveFast | null>(
-      null
+      () => loadActiveFast()
     );
 
   const [now, setNow] =
@@ -131,7 +130,7 @@ export default function FastingPage() {
     notificationPermission,
     setNotificationPermission,
   ] = useState<NotificationState>(
-    "default"
+    () => getNotificationPermission()
   );
 
   const [
@@ -169,20 +168,6 @@ export default function FastingPage() {
   ] = useState<string | null>(
     null
   );
-
-  useEffect(() => {
-    setSettings(
-      loadFastingSettings()
-    );
-
-    setActiveFast(
-      loadActiveFast()
-    );
-
-    setNotificationPermission(
-      getNotificationPermission()
-    );
-  }, []);
 
   useEffect(() => {
     if (!activeFast) {
@@ -570,10 +555,16 @@ export default function FastingPage() {
         new Date();
 
       try {
-        await saveFastingHistory(
+        const historyResult = await saveFastingHistory(
           activeFast,
           endedAt
         );
+
+        if (!historyResult.synced) {
+          setFastingActionError(
+            "Ayuno guardado en este dispositivo. Se sincronizará cuando haya conexión y notificaciones activas."
+          );
+        }
       } catch (error) {
         console.error(
           "No se pudo guardar el historial de ayuno:",

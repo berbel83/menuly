@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -76,12 +76,9 @@ export default function FastingSummary() {
   ] =
     useState(false);
 
-  const settings =
-    useMemo(
-      () =>
-        loadFastingSettings(),
-      [activeFast]
-    );
+  const [settings] = useState(
+    () => loadFastingSettings()
+  );
 
   useEffect(() => {
     if (!activeFast) {
@@ -185,10 +182,16 @@ export default function FastingSummary() {
       setActionError(null);
 
       try {
-        await saveFastingHistory(
+        const historyResult = await saveFastingHistory(
           activeFast,
           new Date()
         );
+
+        if (!historyResult.synced) {
+          setActionError(
+            "Ayuno guardado en este dispositivo. Se sincronizará más adelante."
+          );
+        }
       } catch (error) {
         setActionError(
           error instanceof Error

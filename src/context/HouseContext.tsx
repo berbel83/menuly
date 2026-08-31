@@ -1,6 +1,4 @@
 import {
-  createContext,
-  useContext,
   useMemo,
   useState,
 } from "react";
@@ -12,17 +10,7 @@ import {
   saveHouse,
   clearHouse,
 } from "../storage/houseStorage";
-
-interface HouseContextValue {
-  house: House | null;
-
-  setHouse(house: House): void;
-
-  logout(): void;
-}
-
-const HouseContext =
-  createContext<HouseContextValue | null>(null);
+import { HouseContext } from "./houseContextDefinition";
 
 export function HouseProvider({
   children,
@@ -58,17 +46,4 @@ export function HouseProvider({
       {children}
     </HouseContext.Provider>
   );
-}
-
-export function useHouse() {
-  const context =
-    useContext(HouseContext);
-
-  if (!context) {
-    throw new Error(
-      "useHouse debe utilizarse dentro de HouseProvider"
-    );
-  }
-
-  return context;
 }
