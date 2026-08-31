@@ -1,108 +1,86 @@
 import { supabase } from "../lib/supabase";
 import type { House } from "../types/house";
+import { ensureAuthenticatedSession } from "./authService";
 
-function generateHouseCode(length = 6) {
-  const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-  let code = "";
-
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(
-      Math.random() * characters.length
-    );
-
-    code += characters[randomIndex];
-  }
-
-  return code;
+interface HouseholdRpcRow {
+  id: string;
+  code: string;
+  name: string;
 }
 
-export async function createHouse(
-  name: string
-): Promise<House> {
+function getRpcRow(data: unknown): HouseholdRpcRow | null {
+  const row = Array.isArray(data) ? data[0] : data;
+
+  if (
+    !row ||
+    typeof row !== "object" ||
+    !("id" in row) ||
+    !("code" in row) ||
+    !("name" in row)
+  ) {
+    return null;
+  }
+
+  return row as HouseholdRpcRow;
+}
+
+function toHouse(row: HouseholdRpcRow): House {
+  return {
+    id: row.id,
+    code: row.code,
+    name: row.name,
+  };
+}
+
+export async function createHouse(name: string): Promise<House> {
   const cleanName = name.trim();
 
   if (!cleanName) {
-    throw new Error(
-      "El hogar necesita un nombre."
-    );
+    throw new Error("El hogar necesita un nombre.");
   }
 
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const code = generateHouseCode();
+  await ensureAuthenticatedSession();
 
-    const { data: existingHouse, error: checkError } =
-      await supabase
-        .from("households")
-        .select("code")
-        .eq("code", code)
-        .maybeSingle();
+  const { data, error } = await supabase.rpc("create_household", {
+    p_name: cleanName,
+  });
 
-    if (checkError) {
-      throw new Error(
-        `No se pudo comprobar el código: ${checkError.message}`
-      );
-    }
-
-    if (existingHouse) {
-      continue;
-    }
-
-    const { data, error } = await supabase
-      .from("households")
-      .insert({
-        code,
-        name: cleanName,
-      })
-      .select("code, name")
-      .single();
-
-    if (error) {
-      throw new Error(
-        `No se pudo crear el hogar: ${error.message}`
-      );
-    }
-
-    return {
-      code: data.code,
-      name: data.name,
-    };
+  if (error) {
+    throw new Error(`No se pudo crear el hogar: ${error.message}`);
   }
 
-  throw new Error(
-    "No se pudo generar un código único. Inténtalo de nuevo."
-  );
+  const row = getRpcRow(data);
+
+  if (!row) {
+    throw new Error("No se recibió el hogar creado.");
+  }
+
+  return toHouse(row);
 }
 
 export async function findHouseByCode(
   inputCode: string
 ): Promise<House | null> {
-  const code = inputCode
-    .trim()
-    .toUpperCase();
+  const code = inputCode.trim().toUpperCase();
 
   if (!code) {
     return null;
   }
 
-  const { data, error } = await supabase
-    .from("households")
-    .select("code, name")
-    .eq("code", code)
-    .maybeSingle();
+  await ensureAuthenticatedSession();
+
+  const { data, error } = await supabase.rpc("join_household", {
+    p_code: code,
+  });
 
   if (error) {
-    throw new Error(
-      `No se pudo buscar el hogar: ${error.message}`
-    );
+    if (error.message.includes("No encontramos ningún hogar")) {
+      return null;
+    }
+
+    throw new Error(`No se pudo buscar el hogar: ${error.message}`);
   }
 
-  if (!data) {
-    return null;
-  }
-
-  return {
-    code: data.code,
-    name: data.name,
-  };
+  const row = getRpcRow(data);
+  return row ? toHouse(row) : null;
 }

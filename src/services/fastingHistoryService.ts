@@ -14,6 +14,7 @@ import {
   removePendingFastingHistory,
   type PendingFastingHistoryEntry,
 } from "../storage/fastingHistoryStorage";
+import { getAuthenticatedUserId } from "./authService";
 
 async function getCurrentPushEndpoint() {
   if (
@@ -40,6 +41,8 @@ async function uploadHistoryEntry(
   entry: PendingFastingHistoryEntry,
   endpoint: string
 ) {
+  const userId = await getAuthenticatedUserId();
+
   const { error } = await supabase
     .from("fasting_history")
     .insert({
@@ -49,6 +52,7 @@ async function uploadHistoryEntry(
       target_hours: entry.targetHours,
       actual_minutes: entry.actualMinutes,
       completed_target: entry.completedTarget,
+      user_id: userId,
     });
 
   if (error) {

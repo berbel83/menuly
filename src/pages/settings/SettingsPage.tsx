@@ -122,7 +122,7 @@ export default function SettingsPage() {
 
           <section className="mt-5 px-1">
             <p className="text-center text-xs text-[#A49A90]">
-              Compausa · versión 0.1.1
+              Compausa · versión 0.2.0
             </p>
           </section>
         </div>
