@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 import {
   getServiceWorkerRegistration,
 } from "./notificationService";
+import { syncPendingFastingHistory } from "./fastingHistoryService";
+import { loadPendingFastingHistory } from "../storage/fastingHistoryStorage";
 
 export interface FastingHistoryEntry {
   id: string;
@@ -11,6 +13,7 @@ export interface FastingHistoryEntry {
   targetHours: number;
   actualMinutes: number;
   completedTarget: boolean;
+  pendingSync?: boolean;
 }
 
 async function getCurrentPushEndpoint() {
@@ -21,13 +24,29 @@ async function getCurrentPushEndpoint() {
     return null;
   }
 
-  const registration =
-    await getServiceWorkerRegistration();
+  try {
+    const registration =
+      await getServiceWorkerRegistration();
 
-  const subscription =
-    await registration.pushManager.getSubscription();
+    const subscription =
+      await registration.pushManager.getSubscription();
 
-  return subscription?.endpoint ?? null;
+    return subscription?.endpoint ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function loadLocalHistory(): FastingHistoryEntry[] {
+  return loadPendingFastingHistory().map((entry) => ({
+    id: `local-${entry.localId}`,
+    startedAt: entry.startedAt,
+    endedAt: entry.endedAt,
+    targetHours: entry.targetHours,
+    actualMinutes: entry.actualMinutes,
+    completedTarget: entry.completedTarget,
+    pendingSync: true,
+  }));
 }
 
 export function getMonday(date: Date) {
@@ -77,22 +96,23 @@ function mapHistoryEntry(entry: {
 }
 
 export async function loadCurrentWeekFastingHistory() {
+  await syncPendingFastingHistory();
+
+  const monday = getMonday(new Date());
+  const nextMonday = new Date(monday);
+  nextMonday.setDate(nextMonday.getDate() + 7);
+
+  const localHistory = loadLocalHistory().filter((entry) => {
+    const endedAt = new Date(entry.endedAt);
+    return endedAt >= monday && endedAt < nextMonday;
+  });
+
   const endpoint =
     await getCurrentPushEndpoint();
 
   if (!endpoint) {
-    return [];
+    return localHistory;
   }
-
-  const monday =
-    getMonday(new Date());
-
-  const nextMonday =
-    new Date(monday);
-
-  nextMonday.setDate(
-    nextMonday.getDate() + 7
-  );
 
   const {
     data,
@@ -130,22 +150,38 @@ export async function loadCurrentWeekFastingHistory() {
       );
 
   if (error) {
+    if (localHistory.length > 0) {
+      return localHistory;
+    }
+
     throw new Error(
       `No se pudo cargar el progreso: ${error.message}`
     );
   }
 
-  return (data ?? []).map(
-    mapHistoryEntry
+  return [
+    ...(data ?? []).map(mapHistoryEntry),
+    ...localHistory,
+  ].sort(
+    (a, b) =>
+      new Date(a.endedAt).getTime() -
+      new Date(b.endedAt).getTime()
   );
 }
 
 export async function loadFastingHistory() {
+  await syncPendingFastingHistory();
+
+  const localHistory = loadLocalHistory();
   const endpoint =
     await getCurrentPushEndpoint();
 
   if (!endpoint) {
-    return [];
+    return localHistory.sort(
+      (a, b) =>
+        new Date(b.endedAt).getTime() -
+        new Date(a.endedAt).getTime()
+    );
   }
 
   const {
@@ -176,12 +212,21 @@ export async function loadFastingHistory() {
       );
 
   if (error) {
+    if (localHistory.length > 0) {
+      return localHistory;
+    }
+
     throw new Error(
       `No se pudo cargar el historial: ${error.message}`
     );
   }
 
-  return (data ?? []).map(
-    mapHistoryEntry
+  return [
+    ...(data ?? []).map(mapHistoryEntry),
+    ...localHistory,
+  ].sort(
+    (a, b) =>
+      new Date(b.endedAt).getTime() -
+      new Date(a.endedAt).getTime()
   );
 }

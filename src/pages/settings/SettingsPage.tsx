@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { useHouse } from "../../context/HouseContext";
+import { useHouse } from "../../context/useHouse";
 
 export default function SettingsPage() {
   const { house, logout } = useHouse();
@@ -122,7 +122,7 @@ export default function SettingsPage() {
 
           <section className="mt-5 px-1">
             <p className="text-center text-xs text-[#A49A90]">
-              Compausa · versión inicial
+              Compausa · versión 0.1.0
             </p>
           </section>
         </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import AppShell from "../components/layout/AppShell";
-import { useHouse } from "../context/HouseContext";
+import { useHouse } from "../context/useHouse";
 import {
   createHouse,
   findHouseByCode,

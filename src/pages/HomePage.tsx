@@ -16,7 +16,7 @@ import MealDetails from "../components/MealDetails";
 import ShoppingListModal from "../components/ShoppingListModal";
 
 import { meals } from "../data/meals";
-import { useHouse } from "../context/HouseContext";
+import { useHouse } from "../context/useHouse";
 import { useShoppingList } from "../hooks/useShoppingList";
 import { useWeeklyMenu } from "../hooks/useWeeklyMenu";
 
@@ -181,7 +181,7 @@ export default function HomePage() {
         fromUrl ??
         currentMonday
       );
-    }, []);
+    }, [currentMonday, searchParams]);
 
   const [
     selectedMonday,
