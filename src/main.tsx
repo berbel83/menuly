@@ -6,6 +6,7 @@ import App from "./App";
 import "./index.css";
 
 import { HouseProvider } from "./context/HouseContext";
+import AuthBootstrap from "./components/auth/AuthBootstrap";
 
 ReactDOM.createRoot(
   document.getElementById("root")!
@@ -13,7 +14,9 @@ ReactDOM.createRoot(
   <React.StrictMode>
     <BrowserRouter>
       <HouseProvider>
-        <App />
+        <AuthBootstrap>
+          <App />
+        </AuthBootstrap>
       </HouseProvider>
     </BrowserRouter>
   </React.StrictMode>

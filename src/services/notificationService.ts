@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { ensureAuthenticatedSession } from "./authService";
 
 export function notificationsSupported() {
   return (
@@ -120,21 +121,16 @@ export async function subscribeToPush() {
     );
   }
 
-  const { error } =
-    await supabase
-      .from("push_subscriptions")
-      .upsert(
-        {
-          endpoint,
-          p256dh,
-          auth,
-          updated_at:
-            new Date().toISOString(),
-        },
-        {
-          onConflict: "endpoint",
-        }
-      );
+  await ensureAuthenticatedSession();
+
+  const { error } = await supabase.rpc(
+    "claim_push_subscription",
+    {
+      p_endpoint: endpoint,
+      p_p256dh: p256dh,
+      p_auth: auth,
+    }
+  );
 
   if (error) {
     throw new Error(
