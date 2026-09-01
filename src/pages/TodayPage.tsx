@@ -50,7 +50,7 @@ export default function TodayPage() {
 
   const dayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
   const day = DAYS[dayIndex];
-  const mealId = weeklyMenu[day];
+  const mealId = weeklyMenu.main[day];
   const meal = mealId
     ? meals.find((item) => item.id === mealId)
     : undefined;

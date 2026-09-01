@@ -18,6 +18,7 @@ import {
   DAYS,
   formatWeekStart,
   type Day,
+  type MealSlot,
 } from "../services/weeklyMenuService";
 import type { Meal } from "../types/meal";
 
@@ -95,6 +96,8 @@ export default function HomePage() {
     useState<Meal | null>(null);
   const [selectedMealDay, setSelectedMealDay] =
     useState<Day | null>(null);
+  const [selectedMealSlot, setSelectedMealSlot] =
+    useState<MealSlot | null>(null);
 
   if (!house) {
     return null;
@@ -108,15 +111,20 @@ export default function HomePage() {
     const date = new Date(selectedMonday);
     date.setDate(selectedMonday.getDate() + index);
 
-    const mealId = weeklyMenu[day];
+    const mealId = weeklyMenu.main[day];
+    const secondaryMealId = weeklyMenu.secondary[day];
     const meal = mealId
       ? meals.find((item) => item.id === mealId)
+      : undefined;
+    const secondaryMeal = secondaryMealId
+      ? meals.find((item) => item.id === secondaryMealId)
       : undefined;
 
     return {
       dayShort: shortDays[day],
       dayNumber: String(date.getDate()),
       meal,
+      secondaryMeal,
     };
   });
 
@@ -137,18 +145,21 @@ export default function HomePage() {
     changeWeek(next);
   }
 
-  function openRecipeSelector(day: Day) {
+  function openRecipeSelector(
+    day: Day,
+    slot: MealSlot = "main",
+  ) {
     navigate(
-      `/choose?day=${encodeURIComponent(day)}&week=${weekStart}`,
+      `/choose?day=${encodeURIComponent(day)}&week=${weekStart}&slot=${slot}`,
     );
   }
 
-  function handleDayClick(index: number) {
+  function handleDayClick(index: number, slot: MealSlot) {
     const day = DAYS[index];
-    const mealId = weeklyMenu[day];
+    const mealId = weeklyMenu[slot][day];
 
     if (!mealId) {
-      openRecipeSelector(day);
+      openRecipeSelector(day, slot);
       return;
     }
 
@@ -156,6 +167,7 @@ export default function HomePage() {
 
     if (meal) {
       setSelectedMealDay(day);
+      setSelectedMealSlot(slot);
       setSelectedMealDetails(meal);
     }
   }
@@ -163,26 +175,29 @@ export default function HomePage() {
   function closeMealDetails() {
     setSelectedMealDetails(null);
     setSelectedMealDay(null);
+    setSelectedMealSlot(null);
   }
 
   function changeCurrentMeal() {
-    if (!selectedMealDay) {
+    if (!selectedMealDay || !selectedMealSlot) {
       return;
     }
 
     const day = selectedMealDay;
+    const slot = selectedMealSlot;
     closeMealDetails();
-    openRecipeSelector(day);
+    openRecipeSelector(day, slot);
   }
 
   async function removeCurrentMeal() {
-    if (!selectedMealDay) {
+    if (!selectedMealDay || !selectedMealSlot) {
       return;
     }
 
     const day = selectedMealDay;
+    const slot = selectedMealSlot;
     closeMealDetails();
-    await removeMeal(day);
+    await removeMeal(day, slot);
   }
 
   async function confirmClearWeek() {

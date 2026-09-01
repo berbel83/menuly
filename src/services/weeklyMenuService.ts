@@ -10,27 +10,43 @@ export const DAYS = [
   "Domingo",
 ] as const;
 
-export type Day = (typeof DAYS)[number];
+export const MEAL_SLOTS = [
+  "main",
+  "secondary",
+] as const;
 
-export type WeeklyMenu = Record<Day, number | null>;
+export type Day = (typeof DAYS)[number];
+export type MealSlot = (typeof MEAL_SLOTS)[number];
+export type DayMenu = Record<Day, number | null>;
+export type WeeklyMenu = Record<MealSlot, DayMenu>;
 
 export interface WeeklyMenuRow {
   room_code: string;
   week_start: string;
   day: Day;
+  meal_slot: MealSlot;
   meal_id: number | null;
   updated_at: string;
 }
 
-export const emptyWeeklyMenu: WeeklyMenu = {
-  Lunes: null,
-  Martes: null,
-  Miércoles: null,
-  Jueves: null,
-  Viernes: null,
-  Sábado: null,
-  Domingo: null,
-};
+function emptyDayMenu(): DayMenu {
+  return {
+    Lunes: null,
+    Martes: null,
+    Miércoles: null,
+    Jueves: null,
+    Viernes: null,
+    Sábado: null,
+    Domingo: null,
+  };
+}
+
+export function createEmptyWeeklyMenu(): WeeklyMenu {
+  return {
+    main: emptyDayMenu(),
+    secondary: emptyDayMenu(),
+  };
+}
 
 export function formatWeekStart(date: Date): string {
   const year = date.getFullYear();
@@ -42,29 +58,30 @@ export function formatWeekStart(date: Date): string {
 
 export async function loadWeeklyMenu(
   houseCode: string,
-  weekStart: string
+  weekStart: string,
 ): Promise<WeeklyMenu> {
   const { data, error } = await supabase
     .from("weekly_menu")
     .select(
-      "room_code, week_start, day, meal_id, updated_at"
+      "room_code, week_start, day, meal_slot, meal_id, updated_at",
     )
     .eq("room_code", houseCode)
     .eq("week_start", weekStart);
 
   if (error) {
     throw new Error(
-      `No se pudo cargar el menú: ${error.message}`
+      `No se pudo cargar el menú: ${error.message}`,
     );
   }
 
-  const menu: WeeklyMenu = {
-    ...emptyWeeklyMenu,
-  };
+  const menu = createEmptyWeeklyMenu();
 
   for (const row of (data ?? []) as WeeklyMenuRow[]) {
-    if (DAYS.includes(row.day)) {
-      menu[row.day] = row.meal_id;
+    if (
+      DAYS.includes(row.day) &&
+      MEAL_SLOTS.includes(row.meal_slot)
+    ) {
+      menu[row.meal_slot][row.day] = row.meal_id;
     }
   }
 
@@ -75,7 +92,8 @@ export async function saveMealForDay(
   houseCode: string,
   weekStart: string,
   day: Day,
-  mealId: number | null
+  mealId: number | null,
+  mealSlot: MealSlot = "main",
 ): Promise<void> {
   const { error } = await supabase
     .from("weekly_menu")
@@ -84,42 +102,46 @@ export async function saveMealForDay(
         room_code: houseCode,
         week_start: weekStart,
         day,
+        meal_slot: mealSlot,
         meal_id: mealId,
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: "room_code,week_start,day",
-      }
+        onConflict: "room_code,week_start,day,meal_slot",
+      },
     );
 
   if (error) {
     throw new Error(
-      `No se pudo guardar el menú: ${error.message}`
+      `No se pudo guardar el menú: ${error.message}`,
     );
   }
 }
 
 export async function clearWeeklyMenu(
   houseCode: string,
-  weekStart: string
+  weekStart: string,
 ): Promise<void> {
-  const rows = DAYS.map((day) => ({
-    room_code: houseCode,
-    week_start: weekStart,
-    day,
-    meal_id: null,
-    updated_at: new Date().toISOString(),
-  }));
+  const rows = MEAL_SLOTS.flatMap((mealSlot) =>
+    DAYS.map((day) => ({
+      room_code: houseCode,
+      week_start: weekStart,
+      day,
+      meal_slot: mealSlot,
+      meal_id: null,
+      updated_at: new Date().toISOString(),
+    })),
+  );
 
   const { error } = await supabase
     .from("weekly_menu")
     .upsert(rows, {
-      onConflict: "room_code,week_start,day",
+      onConflict: "room_code,week_start,day,meal_slot",
     });
 
   if (error) {
     throw new Error(
-      `No se pudo vaciar el menú: ${error.message}`
+      `No se pudo vaciar el menú: ${error.message}`,
     );
   }
 }
