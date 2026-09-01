@@ -7,6 +7,7 @@ import {
   getFastProgress,
   getFastingHours,
   getRemainingMilliseconds,
+  adjustActiveFastStart,
   loadActiveFast,
   loadFastingSettings,
   saveFastingSettings,
@@ -55,6 +56,12 @@ function formatDateTime(value: string) {
   });
 
   return `${day} · ${formatClock(date)}`;
+}
+
+function toDateTimeInput(value: string | Date) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
 function formatDuration(milliseconds: number) {
@@ -156,6 +163,10 @@ export default function FastingPage() {
   ] = useState<string | null>(
     null
   );
+
+  const [timeEditMode, setTimeEditMode] = useState<"start" | "finish" | null>(null);
+  const [timeEditValue, setTimeEditValue] = useState("");
+  const [timeEditError, setTimeEditError] = useState<string | null>(null);
 
   const [
     reminderActionLoading,
@@ -542,6 +553,12 @@ export default function FastingPage() {
       return;
     }
 
+    await finishFastAt(new Date());
+  }
+
+  async function finishFastAt(endedAt: Date) {
+    if (!activeFast) return;
+
     try {
       setFastingActionLoading(
         true
@@ -550,9 +567,6 @@ export default function FastingPage() {
       setFastingActionError(
         null
       );
-
-      const endedAt =
-        new Date();
 
       try {
         const historyResult = await saveFastingHistory(
@@ -592,11 +606,53 @@ export default function FastingPage() {
       stopFast();
       setActiveFast(null);
       setNow(new Date());
+      setTimeEditMode(null);
     } finally {
       setFastingActionLoading(
         false
       );
     }
+  }
+
+  function openTimeEditor(mode: "start" | "finish") {
+    if (!activeFast) return;
+    setTimeEditMode(mode);
+    setTimeEditError(null);
+    setTimeEditValue(
+      toDateTimeInput(mode === "start" ? activeFast.startAt : new Date())
+    );
+  }
+
+  async function saveAdjustedTime() {
+    if (!activeFast) return;
+    const selected = new Date(timeEditValue);
+    const current = new Date();
+
+    if (Number.isNaN(selected.getTime()) || selected > current) {
+      setTimeEditError("Elige una fecha y hora válidas que no estén en el futuro.");
+      return;
+    }
+
+    if (timeEditMode === "start") {
+      const adjusted = adjustActiveFastStart(activeFast, selected);
+      setActiveFast(adjusted);
+      setNow(current);
+      setTimeEditMode(null);
+      try {
+        await cancelFastCompletedNotification();
+        await scheduleFastCompletedNotification(adjusted);
+      } catch {
+        setFastingActionError("La hora se corrigió, pero no se pudo actualizar el aviso de finalización.");
+      }
+      return;
+    }
+
+    if (selected <= new Date(activeFast.startAt)) {
+      setTimeEditError("La finalización debe ser posterior al inicio del ayuno.");
+      return;
+    }
+
+    await finishFastAt(selected);
   }
 
   return (
@@ -1023,6 +1079,15 @@ export default function FastingPage() {
                     </p>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => openTimeEditor("start")}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#D8DED4] bg-white/70 px-3 py-2.5 text-xs font-bold text-[var(--forest)]"
+                >
+                  <span aria-hidden="true">✎</span>
+                  Corregir hora de inicio
+                </button>
               </section>
 
               <button
@@ -1045,9 +1110,51 @@ export default function FastingPage() {
                   ? "Finalizar ayuno"
                   : "Terminar ayuno antes"}
               </button>
+
+              <button
+                type="button"
+                onClick={() => openTimeEditor("finish")}
+                disabled={fastingActionLoading}
+                className="mt-2 w-full rounded-2xl px-4 py-3 text-xs font-bold text-[#776D64] underline decoration-[#C9BCAF] underline-offset-4 disabled:opacity-50"
+              >
+                Se me olvidó pararlo: indicar otra hora
+              </button>
             </>
           )}
         </main>
+
+        {timeEditMode && activeFast && (
+          <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-3 backdrop-blur-sm sm:items-center" onMouseDown={(event) => { if (event.target === event.currentTarget) setTimeEditMode(null); }}>
+            <section role="dialog" aria-modal="true" aria-labelledby="fast-time-title" className="w-full max-w-md rounded-[26px] bg-[var(--surface)] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="eyebrow text-[var(--coral)]">Corregir ayuno</p>
+                  <h2 id="fast-time-title" className="mt-1 font-serif text-2xl font-semibold text-[var(--ink)]">
+                    {timeEditMode === "start" ? "¿Cuándo empezaste?" : "¿Cuándo terminaste?"}
+                  </h2>
+                </div>
+                <button type="button" onClick={() => setTimeEditMode(null)} aria-label="Cerrar" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--sage-soft)] text-[var(--forest)]">✕</button>
+              </div>
+
+              <label className="mt-5 block text-xs font-bold text-[var(--ink-soft)]">
+                Día y hora
+                <input
+                  type="datetime-local"
+                  value={timeEditValue}
+                  max={toDateTimeInput(new Date())}
+                  onChange={(event) => { setTimeEditValue(event.target.value); setTimeEditError(null); }}
+                  className="mt-2 w-full rounded-2xl border border-[var(--line-strong)] bg-white px-4 py-3 text-base text-[var(--ink)] outline-none focus:border-[var(--coral)]"
+                />
+              </label>
+
+              {timeEditError && <p className="mt-3 text-sm font-medium text-[#A34F34]">{timeEditError}</p>}
+
+              <button type="button" onClick={() => void saveAdjustedTime()} disabled={fastingActionLoading} className="mt-5 w-full rounded-2xl bg-[var(--forest)] px-4 py-3.5 text-sm font-bold text-white disabled:opacity-50">
+                {timeEditMode === "start" ? "Guardar hora de inicio" : "Finalizar ayuno a esta hora"}
+              </button>
+            </section>
+          </div>
+        )}
       </div>
     </AppShell>
   );
