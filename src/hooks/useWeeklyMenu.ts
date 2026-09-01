@@ -2,33 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 
 import { meals } from "../data/meals";
 import { supabase } from "../lib/supabase";
-
 import {
   clearWeeklyMenu,
+  createEmptyWeeklyMenu,
   DAYS,
-  emptyWeeklyMenu,
   loadWeeklyMenu,
+  MEAL_SLOTS,
   saveMealForDay,
   type Day,
+  type MealSlot,
   type WeeklyMenu,
   type WeeklyMenuRow,
 } from "../services/weeklyMenuService";
-
 import type { Meal } from "../types/meal";
 
 export function useWeeklyMenu(
   houseCode: string,
-  weekStart: string
+  weekStart: string,
 ) {
   const [weeklyMenu, setWeeklyMenu] =
-    useState<WeeklyMenu>(emptyWeeklyMenu);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
+    useState<WeeklyMenu>(() => createEmptyWeeklyMenu());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] =
     useState<string | null>(null);
 
@@ -39,12 +34,7 @@ export function useWeeklyMenu(
       try {
         setLoading(true);
         setErrorMessage(null);
-
-        const menu =
-          await loadWeeklyMenu(
-            houseCode,
-            weekStart
-          );
+        const menu = await loadWeeklyMenu(houseCode, weekStart);
 
         if (isMounted) {
           setWeeklyMenu(menu);
@@ -54,7 +44,7 @@ export function useWeeklyMenu(
           setErrorMessage(
             error instanceof Error
               ? error.message
-              : "No se pudo cargar el menú."
+              : "No se pudo cargar el menú.",
           );
         }
       } finally {
@@ -64,12 +54,10 @@ export function useWeeklyMenu(
       }
     }
 
-    initialLoad();
+    void initialLoad();
 
     const channel = supabase
-      .channel(
-        `weekly-menu-${houseCode}-${weekStart}`
-      )
+      .channel(`weekly-menu-${houseCode}-${weekStart}`)
       .on(
         "postgres_changes",
         {
@@ -79,152 +67,127 @@ export function useWeeklyMenu(
           filter: `room_code=eq.${houseCode}`,
         },
         (payload) => {
-          if (
+          const row = (
             payload.eventType === "DELETE"
+              ? payload.old
+              : payload.new
+          ) as Partial<WeeklyMenuRow>;
+
+          if (
+            row.week_start !== weekStart ||
+            !row.day ||
+            !DAYS.includes(row.day as Day)
           ) {
-            const oldRow =
-              payload.old as Partial<WeeklyMenuRow>;
-
-            if (
-              oldRow.week_start ===
-                weekStart &&
-              oldRow.day &&
-              DAYS.includes(
-                oldRow.day as Day
-              )
-            ) {
-              setWeeklyMenu(
-                (current) => ({
-                  ...current,
-                  [oldRow.day as Day]:
-                    null,
-                })
-              );
-            }
-
             return;
           }
 
-          const newRow =
-            payload.new as WeeklyMenuRow;
+          const slot =
+            row.meal_slot &&
+            MEAL_SLOTS.includes(row.meal_slot as MealSlot)
+              ? (row.meal_slot as MealSlot)
+              : "main";
 
-          if (
-            newRow.week_start ===
-              weekStart &&
-            DAYS.includes(newRow.day)
-          ) {
-            setWeeklyMenu(
-              (current) => ({
-                ...current,
-                [newRow.day]:
-                  newRow.meal_id,
-              })
-            );
-          }
-        }
+          setWeeklyMenu((current) => ({
+            ...current,
+            [slot]: {
+              ...current[slot],
+              [row.day as Day]:
+                payload.eventType === "DELETE"
+                  ? null
+                  : row.meal_id ?? null,
+            },
+          }));
+        },
       )
       .subscribe();
 
     return () => {
       isMounted = false;
-
-      supabase.removeChannel(
-        channel
-      );
+      void supabase.removeChannel(channel);
     };
   }, [houseCode, weekStart]);
 
   const selectedMeals = useMemo(() => {
-    return DAYS.map((day) => {
-      const mealId =
-        weeklyMenu[day];
+    return MEAL_SLOTS.flatMap((slot) =>
+      DAYS.map((day) => {
+        const mealId = weeklyMenu[slot][day];
 
-      return mealId
-        ? meals.find(
-            (meal) =>
-              meal.id === mealId
-          )
-        : null;
-    }).filter(
-      (meal): meal is Meal =>
-        Boolean(meal)
-    );
+        return mealId
+          ? meals.find((meal) => meal.id === mealId)
+          : null;
+      }),
+    ).filter((meal): meal is Meal => Boolean(meal));
   }, [weeklyMenu]);
+
+  async function refreshAfterError() {
+    const menu = await loadWeeklyMenu(houseCode, weekStart);
+    setWeeklyMenu(menu);
+  }
 
   async function selectMeal(
     day: Day,
-    mealId: number
+    mealId: number,
+    mealSlot: MealSlot = "main",
   ) {
     try {
       setSaving(true);
       setErrorMessage(null);
-
-      setWeeklyMenu(
-        (current) => ({
-          ...current,
+      setWeeklyMenu((current) => ({
+        ...current,
+        [mealSlot]: {
+          ...current[mealSlot],
           [day]: mealId,
-        })
-      );
+        },
+      }));
 
       await saveMealForDay(
         houseCode,
         weekStart,
         day,
-        mealId
+        mealId,
+        mealSlot,
       );
     } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "No se pudo guardar la comida."
+          : "No se pudo guardar la comida.",
       );
-
-      const menu =
-        await loadWeeklyMenu(
-          houseCode,
-          weekStart
-        );
-
-      setWeeklyMenu(menu);
+      await refreshAfterError();
     } finally {
       setSaving(false);
     }
   }
 
   async function removeMeal(
-    day: Day
+    day: Day,
+    mealSlot: MealSlot = "main",
   ) {
     try {
       setSaving(true);
       setErrorMessage(null);
-
-      setWeeklyMenu(
-        (current) => ({
-          ...current,
+      setWeeklyMenu((current) => ({
+        ...current,
+        [mealSlot]: {
+          ...current[mealSlot],
           [day]: null,
-        })
-      );
+        },
+      }));
 
       await saveMealForDay(
         houseCode,
         weekStart,
         day,
-        null
+        null,
+        mealSlot,
       );
     } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "No se pudo quitar la comida."
+          : "No se pudo quitar la comida.",
       );
-
-      const menu =
-        await loadWeeklyMenu(
-          houseCode,
-          weekStart
-        );
-
-      setWeeklyMenu(menu);
+      await refreshAfterError();
     } finally {
       setSaving(false);
     }
@@ -234,29 +197,15 @@ export function useWeeklyMenu(
     try {
       setSaving(true);
       setErrorMessage(null);
-
-      setWeeklyMenu(
-        emptyWeeklyMenu
-      );
-
-      await clearWeeklyMenu(
-        houseCode,
-        weekStart
-      );
+      setWeeklyMenu(createEmptyWeeklyMenu());
+      await clearWeeklyMenu(houseCode, weekStart);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "No se pudo vaciar el menú."
+          : "No se pudo vaciar el menú.",
       );
-
-      const menu =
-        await loadWeeklyMenu(
-          houseCode,
-          weekStart
-        );
-
-      setWeeklyMenu(menu);
+      await refreshAfterError();
     } finally {
       setSaving(false);
     }
