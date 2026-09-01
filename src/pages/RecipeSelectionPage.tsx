@@ -12,11 +12,17 @@ import { useWeeklyMenu } from "../hooks/useWeeklyMenu";
 
 import {
   DAYS,
+  MEAL_SLOTS,
   type Day,
+  type MealSlot,
 } from "../services/weeklyMenuService";
 
 function isValidDay(value: string | null): value is Day {
   return value !== null && DAYS.includes(value as Day);
+}
+
+function isValidMealSlot(value: string): value is MealSlot {
+  return MEAL_SLOTS.includes(value as MealSlot);
 }
 
 export default function RecipeSelectionPage() {
@@ -25,8 +31,14 @@ export default function RecipeSelectionPage() {
 
   const dayParam = searchParams.get("day");
   const weekStart = searchParams.get("week");
+  const slotParam = searchParams.get("slot") ?? "main";
 
-  if (!house || !isValidDay(dayParam) || !weekStart) {
+  if (
+    !house ||
+    !isValidDay(dayParam) ||
+    !weekStart ||
+    !isValidMealSlot(slotParam)
+  ) {
     return <Navigate to="/menu" replace />;
   }
 
@@ -35,6 +47,7 @@ export default function RecipeSelectionPage() {
       houseCode={house.code}
       selectedDay={dayParam}
       weekStart={weekStart}
+      selectedSlot={slotParam}
     />
   );
 }
@@ -43,12 +56,14 @@ interface RecipeSelectionContentProps {
   houseCode: string;
   selectedDay: Day;
   weekStart: string;
+  selectedSlot: MealSlot;
 }
 
 function RecipeSelectionContent({
   houseCode,
   selectedDay,
   weekStart,
+  selectedSlot,
 }: RecipeSelectionContentProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
@@ -92,7 +107,7 @@ function RecipeSelectionContent({
   }, [query, category]);
 
   async function chooseMeal(mealId: number) {
-    await selectMeal(selectedDay, mealId);
+    await selectMeal(selectedDay, mealId, selectedSlot);
 
     navigate(`/menu?week=${weekStart}`);
   }
@@ -119,7 +134,9 @@ function RecipeSelectionContent({
               </p>
 
               <h1 className="font-serif text-[25px] font-semibold tracking-[-0.03em] text-[#25251F]">
-                Elegir comida
+                {selectedSlot === "main"
+                  ? "Elegir comida principal"
+                  : "Añadir otra comida"}
               </h1>
             </div>
           </div>
