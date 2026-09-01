@@ -99,3 +99,30 @@ export function removePendingFastingHistory(localId: string) {
     )
   );
 }
+
+export function updatePendingFastingHistory(
+  localId: string,
+  startedAt: string,
+  endedAt: string,
+  targetHours: number
+) {
+  const actualMinutes = Math.max(
+    0,
+    Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 60000)
+  );
+
+  writePendingHistory(
+    loadPendingFastingHistory().map((entry) =>
+      entry.localId === localId
+        ? {
+            ...entry,
+            startedAt,
+            endedAt,
+            targetHours,
+            actualMinutes,
+            completedTarget: actualMinutes >= targetHours * 60,
+          }
+        : entry
+    )
+  );
+}

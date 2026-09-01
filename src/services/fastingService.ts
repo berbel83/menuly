@@ -143,6 +143,27 @@ export function startFast(
   return activeFast;
 }
 
+export function adjustActiveFastStart(
+  fast: ActiveFast,
+  startedAt: Date
+): ActiveFast {
+  const targetEnd = new Date(
+    startedAt.getTime() + fast.fastingHours * 60 * 60 * 1000
+  );
+
+  const adjustedFast: ActiveFast = {
+    ...fast,
+    startAt: startedAt.toISOString(),
+    targetEndAt: targetEnd.toISOString(),
+  };
+
+  localStorage.setItem(ACTIVE_FAST_KEY, JSON.stringify(adjustedFast));
+  localStorage.removeItem(LEGACY_ACTIVE_FAST_KEY);
+  void syncFastingStateToCloud(loadFastingSettings(), adjustedFast);
+
+  return adjustedFast;
+}
+
 export function stopFast() {
   localStorage.removeItem(
     ACTIVE_FAST_KEY

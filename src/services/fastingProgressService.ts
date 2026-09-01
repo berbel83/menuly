@@ -1,7 +1,10 @@
 import { supabase } from "../lib/supabase";
 
 import { syncPendingFastingHistory } from "./fastingHistoryService";
-import { loadPendingFastingHistory } from "../storage/fastingHistoryStorage";
+import {
+  loadPendingFastingHistory,
+  updatePendingFastingHistory,
+} from "../storage/fastingHistoryStorage";
 import { getAuthenticatedUserId } from "./authService";
 
 export interface FastingHistoryEntry {
@@ -186,4 +189,52 @@ export async function loadFastingHistory() {
       new Date(b.endedAt).getTime() -
       new Date(a.endedAt).getTime()
   );
+}
+
+export async function updateFastingHistoryEntry(
+  entry: FastingHistoryEntry,
+  startedAt: Date,
+  endedAt: Date,
+  targetHours: number
+) {
+  const actualMinutes = Math.max(
+    0,
+    Math.round((endedAt.getTime() - startedAt.getTime()) / 60000)
+  );
+  const completedTarget = actualMinutes >= targetHours * 60;
+
+  if (entry.pendingSync && entry.id.startsWith("local-")) {
+    updatePendingFastingHistory(
+      entry.id.slice("local-".length),
+      startedAt.toISOString(),
+      endedAt.toISOString(),
+      targetHours
+    );
+  } else {
+    const userId = await getAuthenticatedUserId();
+    const { error } = await supabase
+      .from("fasting_history")
+      .update({
+        started_at: startedAt.toISOString(),
+        ended_at: endedAt.toISOString(),
+        target_hours: targetHours,
+        actual_minutes: actualMinutes,
+        completed_target: completedTarget,
+      })
+      .eq("id", entry.id)
+      .eq("user_id", userId);
+
+    if (error) {
+      throw new Error(`No se pudo actualizar el ayuno: ${error.message}`);
+    }
+  }
+
+  return {
+    ...entry,
+    startedAt: startedAt.toISOString(),
+    endedAt: endedAt.toISOString(),
+    targetHours,
+    actualMinutes,
+    completedTarget,
+  };
 }
