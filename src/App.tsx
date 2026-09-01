@@ -4,15 +4,16 @@ import {
   Routes,
 } from "react-router-dom";
 
-import { useHouse } from "./context/useHouse";
-
+import BottomNavigation from "./components/navigation/BottomNavigation";
 import PushBootstrap from "./components/notifications/PushBootstrap";
-
-import HomePage from "./pages/HomePage";
-import WelcomePage from "./pages/WelcomePage";
-import RecipeSelectionPage from "./pages/RecipeSelectionPage";
-import FastingPage from "./pages/FastingPage";
+import { useHouse } from "./context/useHouse";
 import FastingHistoryPage from "./pages/FastingHistoryPage";
+import FastingPage from "./pages/FastingPage";
+import HomePage from "./pages/HomePage";
+import RecipeSelectionPage from "./pages/RecipeSelectionPage";
+import ShoppingPage from "./pages/ShoppingPage";
+import TodayPage from "./pages/TodayPage";
+import WelcomePage from "./pages/WelcomePage";
 import SettingsPage from "./pages/settings/SettingsPage";
 
 export default function App() {
@@ -27,41 +28,17 @@ export default function App() {
       <PushBootstrap />
 
       <Routes>
-        <Route
-          path="/"
-          element={<HomePage />}
-        />
-
-        <Route
-          path="/choose"
-          element={<RecipeSelectionPage />}
-        />
-
-        <Route
-          path="/fasting"
-          element={<FastingPage />}
-        />
-
-        <Route
-          path="/fasting/history"
-          element={<FastingHistoryPage />}
-        />
-
-        <Route
-          path="/settings"
-          element={<SettingsPage />}
-        />
-
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/"
-              replace
-            />
-          }
-        />
+        <Route path="/" element={<TodayPage />} />
+        <Route path="/menu" element={<HomePage />} />
+        <Route path="/choose" element={<RecipeSelectionPage />} />
+        <Route path="/fasting" element={<FastingPage />} />
+        <Route path="/fasting/history" element={<FastingHistoryPage />} />
+        <Route path="/shopping" element={<ShoppingPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      <BottomNavigation />
     </>
   );
 }
