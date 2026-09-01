@@ -167,7 +167,7 @@ function RecipeSelectionContent({
   }
 
   async function confirmHide(meal: Meal) {
-    if (window.confirm(`¿Ocultar “${meal.name}” de vuestro catálogo?`)) {
+    if (window.confirm(`¿Quitar “${meal.name}” de vuestra lista de recetas? Podréis recuperarla más adelante desde los ajustes del catálogo.`)) {
       await hideMeal(meal.id);
     }
   }
@@ -359,15 +359,18 @@ function RecipeSelectionContent({
               </p>
             </div>
           ) : (
-            <div className="grid gap-3 pb-4">
+            <div className="overflow-hidden rounded-[24px] border border-[var(--line)] bg-[var(--surface)] shadow-[0_16px_38px_rgba(28,52,39,.08)]">
               {filteredMeals.map((meal) => (
-                <article key={meal.id} className="surface-card flex items-stretch overflow-hidden">
+                <article key={meal.id} className="flex items-stretch border-b border-[var(--line)] last:border-b-0">
                   <button
                     type="button"
                     disabled={saving}
                     onClick={() => chooseMeal(meal.id)}
                     className="group flex min-w-0 flex-1 items-center gap-3 px-4 py-4 text-left transition hover:bg-[var(--sage-soft)] disabled:opacity-60"
                   >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--sage-soft)] text-lg font-semibold text-[var(--forest)]" aria-hidden="true">
+                    {meal.category === "Pescado" ? "≈" : meal.category === "Ligero" ? "❋" : meal.category === "Pasta" ? "∿" : "✦"}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-serif text-[18px] font-semibold leading-[1.25] text-[var(--ink)]">
                       {meal.name}
@@ -406,7 +409,7 @@ function RecipeSelectionContent({
                   </span>
                   </button>
 
-                  <div className="flex w-12 shrink-0 flex-col items-center justify-center gap-1 border-l border-[var(--line)] bg-[#FAFAF6]">
+                  <div className="flex w-14 shrink-0 flex-col items-center justify-center gap-1 border-l border-[var(--line)] bg-[#F3F4EE]">
                     <button
                       type="button"
                       onClick={() => void toggleFavorite(meal.id)}
@@ -427,10 +430,23 @@ function RecipeSelectionContent({
                           void confirmHide(meal);
                         }
                       }}
-                      className="grid h-10 w-10 place-items-center rounded-full text-sm text-[#A79C92] transition hover:bg-[#F1ECE6]"
-                      aria-label={meal.isSystem === false || meal.householdId ? "Editar plato" : "Ocultar plato"}
+                      className={`grid h-10 w-10 place-items-center rounded-xl transition ${
+                        meal.isSystem === false || meal.householdId
+                          ? "text-[#657168] hover:bg-white"
+                          : "text-[#A45340] hover:bg-[#F9E1D9]"
+                      }`}
+                      aria-label={meal.isSystem === false || meal.householdId ? "Editar plato" : "Quitar receta de la lista"}
                     >
-                      {meal.isSystem === false || meal.householdId ? "✎" : "◌"}
+                      {meal.isSystem === false || meal.householdId ? (
+                        <span className="text-base" aria-hidden="true">✎</span>
+                      ) : (
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4h8v2" />
+                          <path d="m19 6-1 14H6L5 6" />
+                          <path d="M10 11v5M14 11v5" />
+                        </svg>
+                      )}
                     </button>
                   </div>
                 </article>
