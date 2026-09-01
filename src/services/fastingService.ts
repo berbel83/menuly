@@ -20,10 +20,13 @@ export interface FastingSettings {
 }
 
 const ACTIVE_FAST_KEY =
-  "menuly_active_fast";
+  "compausa_active_fast";
 
 const FASTING_SETTINGS_KEY =
-  "menuly_fasting_settings";
+  "compausa_fasting_settings";
+
+const LEGACY_ACTIVE_FAST_KEY = "menuly_active_fast";
+const LEGACY_SETTINGS_KEY = "menuly_fasting_settings";
 
 export const DEFAULT_FASTING_SETTINGS: FastingSettings = {
   preset: "16:8",
@@ -56,9 +59,7 @@ export function getFastingHours(
 
 export function loadFastingSettings(): FastingSettings {
   try {
-    const stored = localStorage.getItem(
-      FASTING_SETTINGS_KEY
-    );
+    const stored = localStorage.getItem(FASTING_SETTINGS_KEY) ?? localStorage.getItem(LEGACY_SETTINGS_KEY);
 
     if (!stored) {
       return DEFAULT_FASTING_SETTINGS;
@@ -97,13 +98,12 @@ export function saveFastingSettings(
     FASTING_SETTINGS_KEY,
     JSON.stringify(settings)
   );
+  void syncFastingStateToCloud(settings, loadActiveFast());
 }
 
 export function loadActiveFast(): ActiveFast | null {
   try {
-    const stored = localStorage.getItem(
-      ACTIVE_FAST_KEY
-    );
+    const stored = localStorage.getItem(ACTIVE_FAST_KEY) ?? localStorage.getItem(LEGACY_ACTIVE_FAST_KEY);
 
     if (!stored) {
       return null;
@@ -138,6 +138,7 @@ export function startFast(
     ACTIVE_FAST_KEY,
     JSON.stringify(activeFast)
   );
+  void syncFastingStateToCloud(loadFastingSettings(), activeFast);
 
   return activeFast;
 }
@@ -146,6 +147,35 @@ export function stopFast() {
   localStorage.removeItem(
     ACTIVE_FAST_KEY
   );
+  localStorage.removeItem(LEGACY_ACTIVE_FAST_KEY);
+  void syncFastingStateToCloud(loadFastingSettings(), null);
+}
+
+async function syncFastingStateToCloud(settings: FastingSettings, activeFast: ActiveFast | null) {
+  try {
+    const { supabase } = await import("../lib/supabase");
+    const { getAuthenticatedUserId } = await import("./authService");
+    const userId = await getAuthenticatedUserId();
+    await supabase.from("user_fasting_state").upsert({
+      user_id: userId, settings, active_fast: activeFast,
+      updated_at: new Date().toISOString(),
+    });
+  } catch { /* El estado local sigue siendo la copia inmediata. */ }
+}
+
+export async function hydrateFastingStateFromCloud() {
+  try {
+    const { supabase } = await import("../lib/supabase");
+    const { getAuthenticatedUserId } = await import("./authService");
+    const userId = await getAuthenticatedUserId();
+    const { data, error } = await supabase.from("user_fasting_state")
+      .select("settings,active_fast").eq("user_id", userId).maybeSingle();
+    if (error) return;
+    if (data?.settings) localStorage.setItem(FASTING_SETTINGS_KEY, JSON.stringify(data.settings));
+    if (data?.active_fast) localStorage.setItem(ACTIVE_FAST_KEY, JSON.stringify(data.active_fast));
+    else if (data) localStorage.removeItem(ACTIVE_FAST_KEY);
+    if (!data) await syncFastingStateToCloud(loadFastingSettings(), loadActiveFast());
+  } catch { /* Sin conexión: se conserva el estado local. */ }
 }
 
 export function getFastProgress(

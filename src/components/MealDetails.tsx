@@ -1,4 +1,5 @@
 import type { Meal } from "../types/meal";
+import { useAccessibleModal } from "../hooks/useAccessibleModal";
 
 interface MealDetailsProps {
   meal: Meal;
@@ -13,9 +14,10 @@ export default function MealDetails({
   onChange,
   onRemove,
 }: MealDetailsProps) {
+  const dialogRef = useAccessibleModal(onClose);
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-3 backdrop-blur-[2px] sm:items-center">
-      <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-[28px] bg-[#FBF8F3] shadow-2xl sm:max-h-[92dvh]">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-3 backdrop-blur-[2px] sm:items-center" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="meal-details-title" className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-[28px] bg-[#FBF8F3] shadow-2xl sm:max-h-[92dvh]">
         <header className="shrink-0 border-b border-[#E5DDD3] px-6 pb-5 pt-6">
           <div className="flex items-start justify-between gap-5">
             <div>
@@ -23,7 +25,7 @@ export default function MealDetails({
                 {meal.category}
               </p>
 
-              <h2 className="mt-1 font-serif text-[28px] font-semibold leading-tight text-[#25251F]">
+              <h2 id="meal-details-title" className="mt-1 font-serif text-[28px] font-semibold leading-tight text-[#25251F]">
                 {meal.name}
               </h2>
 
@@ -56,6 +58,7 @@ export default function MealDetails({
             <button
               type="button"
               onClick={onClose}
+              aria-label="Cerrar receta"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#E2D9CF] bg-white text-[#5E5851]"
             >
               ✕

@@ -11,6 +11,7 @@ import {
   subscribeToPush,
 } from "../../services/notificationService";
 import { syncPendingFastingHistory } from "../../services/fastingHistoryService";
+import { hydrateFastingStateFromCloud } from "../../services/fastingService";
 
 export default function AuthBootstrap({
   children,
@@ -33,6 +34,7 @@ export default function AuthBootstrap({
         setErrorMessage(null);
 
         await ensureAuthenticatedSession();
+        await hydrateFastingStateFromCloud();
 
         if (initialHouseRef.current) {
           const migratedHouse = await findHouseByCode(
@@ -62,7 +64,6 @@ export default function AuthBootstrap({
         ) {
           try {
             await subscribeToPush();
-            await syncPendingFastingHistory();
           } catch (error) {
             console.error(
               "No se pudieron migrar todavía las notificaciones:",
@@ -70,6 +71,8 @@ export default function AuthBootstrap({
             );
           }
         }
+
+        await syncPendingFastingHistory();
 
         if (active) {
           setReady(true);

@@ -1,10 +1,8 @@
 import { supabase } from "../lib/supabase";
 
-import {
-  getServiceWorkerRegistration,
-} from "./notificationService";
 import { syncPendingFastingHistory } from "./fastingHistoryService";
 import { loadPendingFastingHistory } from "../storage/fastingHistoryStorage";
+import { getAuthenticatedUserId } from "./authService";
 
 export interface FastingHistoryEntry {
   id: string;
@@ -14,27 +12,6 @@ export interface FastingHistoryEntry {
   actualMinutes: number;
   completedTarget: boolean;
   pendingSync?: boolean;
-}
-
-async function getCurrentPushEndpoint() {
-  if (
-    !("Notification" in window) ||
-    Notification.permission !== "granted"
-  ) {
-    return null;
-  }
-
-  try {
-    const registration =
-      await getServiceWorkerRegistration();
-
-    const subscription =
-      await registration.pushManager.getSubscription();
-
-    return subscription?.endpoint ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function loadLocalHistory(): FastingHistoryEntry[] {
@@ -107,12 +84,7 @@ export async function loadCurrentWeekFastingHistory() {
     return endedAt >= monday && endedAt < nextMonday;
   });
 
-  const endpoint =
-    await getCurrentPushEndpoint();
-
-  if (!endpoint) {
-    return localHistory;
-  }
+  const userId = await getAuthenticatedUserId();
 
   const {
     data,
@@ -130,10 +102,7 @@ export async function loadCurrentWeekFastingHistory() {
           completed_target
         `
       )
-      .eq(
-        "subscription_endpoint",
-        endpoint
-      )
+      .eq("user_id", userId)
       .gte(
         "ended_at",
         monday.toISOString()
@@ -173,16 +142,7 @@ export async function loadFastingHistory() {
   await syncPendingFastingHistory();
 
   const localHistory = loadLocalHistory();
-  const endpoint =
-    await getCurrentPushEndpoint();
-
-  if (!endpoint) {
-    return localHistory.sort(
-      (a, b) =>
-        new Date(b.endedAt).getTime() -
-        new Date(a.endedAt).getTime()
-    );
-  }
+  const userId = await getAuthenticatedUserId();
 
   const {
     data,
@@ -200,10 +160,7 @@ export async function loadFastingHistory() {
           completed_target
         `
       )
-      .eq(
-        "subscription_endpoint",
-        endpoint
-      )
+      .eq("user_id", userId)
       .order(
         "ended_at",
         {

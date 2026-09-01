@@ -562,7 +562,7 @@ export default function FastingPage() {
 
         if (!historyResult.synced) {
           setFastingActionError(
-            "Ayuno guardado en este dispositivo. Se sincronizará cuando haya conexión y notificaciones activas."
+            "Ayuno guardado en este dispositivo. Se sincronizará cuando vuelva la conexión."
           );
         }
       } catch (error) {

@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { NewHouseholdMeal } from "../../services/mealCatalogService";
 import type { Category, Ingredient, Meal } from "../../types/meal";
+import { useAccessibleModal } from "../../hooks/useAccessibleModal";
 
 const categories: Category[] = [
   "Pollo", "Carne", "Pescado", "Pasta", "Arroz", "Huevos",
@@ -27,6 +28,7 @@ function parseIngredients(value: string): Ingredient[] {
 }
 
 export default function MealEditorModal({ meal, onClose, onSave, onDelete }: Props) {
+  const dialogRef = useAccessibleModal(onClose);
   const [name, setName] = useState(meal?.name ?? "");
   const [category, setCategory] = useState<Category>(meal?.category ?? "Pollo");
   const [cookingTime, setCookingTime] = useState(String(meal?.cookingTime ?? 30));
@@ -78,14 +80,14 @@ export default function MealEditorModal({ meal, onClose, onSave, onDelete }: Pro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-3 backdrop-blur-sm sm:items-center">
-      <div className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-[28px] bg-[#FBF8F3] p-5 shadow-2xl sm:rounded-[28px]">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-3 backdrop-blur-sm sm:items-center" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="meal-editor-title" className="max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-t-[28px] bg-[#FBF8F3] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl sm:rounded-[28px]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#D96536]">Vuestro catálogo</p>
-            <h2 className="mt-1 font-serif text-[26px] font-semibold">{meal ? "Editar plato" : "Añadir un plato"}</h2>
+            <h2 id="meal-editor-title" className="mt-1 font-serif text-[26px] font-semibold">{meal ? "Editar plato" : "Añadir un plato"}</h2>
           </div>
-          <button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#625B54]">✕</button>
+          <button type="button" onClick={onClose} aria-label="Cerrar editor" className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#625B54]">✕</button>
         </div>
 
         <label className="mt-5 block text-xs font-semibold text-[#5F695F]">
