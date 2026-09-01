@@ -27,7 +27,7 @@ export default function RecipeSelectionPage() {
   const weekStart = searchParams.get("week");
 
   if (!house || !isValidDay(dayParam) || !weekStart) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/menu" replace />;
   }
 
   return (
@@ -94,7 +94,7 @@ function RecipeSelectionContent({
   async function chooseMeal(mealId: number) {
     await selectMeal(selectedDay, mealId);
 
-    navigate(`/?week=${weekStart}`);
+    navigate(`/menu?week=${weekStart}`);
   }
 
   return (
@@ -105,7 +105,7 @@ function RecipeSelectionContent({
             <button
               type="button"
               onClick={() =>
-                navigate(`/?week=${weekStart}`)
+                navigate(`/menu?week=${weekStart}`)
               }
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#E2D9CF] bg-[#FFFDFC] text-[25px] font-light text-[#5E574F]"
               aria-label="Volver"

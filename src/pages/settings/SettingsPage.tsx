@@ -41,7 +41,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#F3EFE8] px-0 py-0 text-[#292923] sm:px-5 sm:py-6">
-      <div className="mx-auto min-h-screen w-full max-w-[620px] bg-[#FBF8F3] sm:min-h-0 sm:overflow-hidden sm:rounded-[30px] sm:border sm:border-[#D8D0C6] sm:shadow-[0_22px_60px_rgba(82,65,48,0.10)]">
+      <div className="mx-auto min-h-screen w-full max-w-[620px] bg-[#FBF8F3] pb-24 sm:min-h-0 sm:overflow-hidden sm:rounded-[30px] sm:border sm:border-[#D8D0C6] sm:shadow-[0_22px_60px_rgba(82,65,48,0.10)]">
         <header className="flex items-center gap-4 border-b border-[#E5DDD3] px-6 py-5">
           <Link
             to="/"
@@ -122,7 +122,7 @@ export default function SettingsPage() {
 
           <section className="mt-5 px-1">
             <p className="text-center text-xs text-[#A49A90]">
-              Compausa · versión 0.2.0
+              Compausa · versión 0.2.1
             </p>
           </section>
         </div>
