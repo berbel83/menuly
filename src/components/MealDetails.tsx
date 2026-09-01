@@ -34,7 +34,7 @@ export default function MealDetails({
               </div>
 
               {meal.description && (
-                <p className="mt-3 max-w-md text-sm leading-6 text-[#6F675F]">
+                <p className="mt-3 max-w-md text-[15px] font-medium leading-7 text-[#49443E]">
                   {meal.description}
                 </p>
               )}
@@ -69,7 +69,7 @@ export default function MealDetails({
               Ingredientes
             </h3>
 
-            <p className="mt-1 text-xs text-[#938A82]">
+            <p className="mt-1 text-sm font-medium text-[#6C645C]">
               Para 2 personas
             </p>
 
@@ -80,11 +80,11 @@ export default function MealDetails({
                     key={`${ingredient.name}-${index}`}
                     className="flex items-center justify-between gap-4 py-3"
                   >
-                    <span className="text-sm font-medium text-[#3C3934]">
+                    <span className="text-[15px] font-semibold text-[#302D29]">
                       {ingredient.name}
                     </span>
 
-                    <span className="text-right text-sm text-[#837A72]">
+                    <span className="text-right text-[15px] font-medium text-[#4F4943]">
                       {ingredient.quantity}
                     </span>
                   </div>
@@ -109,7 +109,7 @@ export default function MealDetails({
                       {index + 1}
                     </div>
 
-                    <p className="pt-0.5 text-sm leading-6 text-[#575149]">
+                    <p className="pt-0.5 text-[15px] font-medium leading-7 text-[#37332E]">
                       {instruction}
                     </p>
                   </li>
@@ -124,7 +124,7 @@ export default function MealDetails({
                 Nota
               </p>
 
-              <p className="mt-1 text-sm leading-6 text-[#665B52]">
+              <p className="mt-1 text-[15px] font-medium leading-7 text-[#403A34]">
                 {meal.notes}
               </p>
             </div>
