@@ -6,18 +6,24 @@ import {
   createHouse,
   findHouseByCode,
 } from "../services/houseService";
+import { sendAccountRecoveryLink } from "../services/authService";
 
 export default function WelcomePage() {
   const { setHouse } = useHouse();
 
   const [mode, setMode] =
-    useState<"create" | "join">("create");
+    useState<"create" | "join" | "recover">("create");
 
   const [houseName, setHouseName] =
     useState("");
 
   const [houseCode, setHouseCode] =
     useState("");
+
+  const [recoveryEmail, setRecoveryEmail] =
+    useState("");
+  const [successMessage, setSuccessMessage] =
+    useState<string | null>(null);
 
   const [loading, setLoading] =
     useState(false);
@@ -73,6 +79,27 @@ export default function WelcomePage() {
     }
   }
 
+  async function handleRecovery() {
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      await sendAccountRecoveryLink(recoveryEmail);
+      setSuccessMessage(
+        "Revisa tu correo y abre el enlace en este dispositivo para recuperar tu hogar."
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "No se pudo enviar el enlace."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <AppShell>
       <div className="flex min-h-screen flex-col justify-center px-5 py-8 sm:min-h-[720px]">
@@ -106,6 +133,7 @@ export default function WelcomePage() {
               onClick={() => {
                 setMode("create");
                 setErrorMessage(null);
+                setSuccessMessage(null);
               }}
               className={`rounded-xl px-3 py-3 text-sm font-semibold transition ${
                 mode === "create"
@@ -121,6 +149,7 @@ export default function WelcomePage() {
               onClick={() => {
                 setMode("join");
                 setErrorMessage(null);
+                setSuccessMessage(null);
               }}
               className={`rounded-xl px-3 py-3 text-sm font-semibold transition ${
                 mode === "join"
@@ -183,7 +212,7 @@ export default function WelcomePage() {
                     : "Crear mi hogar"}
                 </button>
               </>
-            ) : (
+            ) : mode === "join" ? (
               <>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#3F6248]">
                   Unirme a un hogar
@@ -238,6 +267,78 @@ export default function WelcomePage() {
                     : "Entrar al hogar"}
                 </button>
               </>
+            ) : (
+              <>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#3F6248]">
+                  Recuperar acceso
+                </p>
+
+                <h2 className="mt-2 font-serif text-[23px] font-semibold text-[#263129]">
+                  Vuelve a tu hogar
+                </h2>
+
+                <p className="mt-1 text-sm leading-6 text-[#7D837B]">
+                  Te enviaremos un enlace al correo con el que protegiste tu
+                  cuenta. No necesitas contraseña.
+                </p>
+
+                <label className="mt-5 block">
+                  <span className="text-xs font-semibold text-[#5F695F]">
+                    Tu correo
+                  </span>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    value={recoveryEmail}
+                    onChange={(event) => setRecoveryEmail(event.target.value)}
+                    placeholder="tu@correo.com"
+                    className="mt-2 w-full rounded-2xl border border-[#DDE5DB] bg-[#F4F7F2] px-4 py-3.5 text-sm text-[#263129] outline-none transition placeholder:text-[#A4ABA3] focus:border-[#3F6248] focus:ring-4 focus:ring-[#3F6248]/10"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  disabled={loading || !recoveryEmail.trim()}
+                  onClick={handleRecovery}
+                  className="mt-5 w-full rounded-2xl bg-[#3F6248] px-4 py-3.5 text-sm font-semibold text-white transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? "Enviando..." : "Enviarme el enlace"}
+                </button>
+              </>
+            )}
+
+            {mode !== "recover" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("recover");
+                  setErrorMessage(null);
+                  setSuccessMessage(null);
+                }}
+                className="mt-4 w-full px-3 py-2 text-sm font-semibold text-[#3F6248] underline decoration-[#AFC0B2] underline-offset-4"
+              >
+                Ya tenía un hogar · Recuperar acceso
+              </button>
+            )}
+
+            {mode === "recover" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("create");
+                  setErrorMessage(null);
+                  setSuccessMessage(null);
+                }}
+                className="mt-3 w-full px-3 py-2 text-sm font-semibold text-[#667068]"
+              >
+                Volver
+              </button>
+            )}
+
+            {successMessage && (
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {successMessage}
+              </div>
             )}
 
             {errorMessage && (

@@ -6,6 +6,8 @@ import {
 
 import BottomNavigation from "./components/navigation/BottomNavigation";
 import PushBootstrap from "./components/notifications/PushBootstrap";
+import NetworkStatus from "./components/status/NetworkStatus";
+import UpdatePrompt from "./components/updates/UpdatePrompt";
 import { useHouse } from "./context/useHouse";
 import FastingHistoryPage from "./pages/FastingHistoryPage";
 import FastingPage from "./pages/FastingPage";
@@ -26,6 +28,8 @@ export default function App() {
   return (
     <>
       <PushBootstrap />
+      <NetworkStatus />
+      <UpdatePrompt />
 
       <Routes>
         <Route path="/" element={<TodayPage />} />

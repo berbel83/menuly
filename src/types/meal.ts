@@ -29,4 +29,9 @@ export interface Meal {
   favorite: boolean;
   airFryer: boolean;
   notes: string;
+  description?: string;
+  collection?: "main_fasting" | "breakfast" | "optional_snack" | "family" | "custom";
+  tags?: string[];
+  householdId?: string | null;
+  isSystem?: boolean;
 }

@@ -15,7 +15,7 @@ export default defineConfig({
       srcDir: "src",
       filename: "sw.ts",
 
-      registerType: "autoUpdate",
+      registerType: "prompt",
 
       includeAssets: [
         "favicon-64x64.png",

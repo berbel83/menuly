@@ -11,7 +11,7 @@ import MealList from "../components/meals/MealList";
 import WeekNavigator from "../components/navigation/WeekNavigator";
 import ShoppingSummary from "../components/shopping/ShoppingSummary";
 import { useHouse } from "../context/useHouse";
-import { meals } from "../data/meals";
+import { useMealCatalog } from "../hooks/useMealCatalog";
 import { useShoppingList } from "../hooks/useShoppingList";
 import { useWeeklyMenu } from "../hooks/useWeeklyMenu";
 import {
@@ -80,6 +80,7 @@ export default function HomePage() {
     () => formatWeekStart(selectedMonday),
     [selectedMonday],
   );
+  const { meals } = useMealCatalog(house?.id);
 
   const {
     weeklyMenu,
@@ -89,7 +90,7 @@ export default function HomePage() {
     errorMessage,
     removeMeal,
     clearWeek,
-  } = useWeeklyMenu(house?.code ?? "", weekStart);
+  } = useWeeklyMenu(house?.code ?? "", weekStart, meals);
 
   const { itemCount } = useShoppingList(selectedMeals);
   const [selectedMealDetails, setSelectedMealDetails] =

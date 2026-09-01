@@ -45,3 +45,66 @@ export function ensureAuthenticatedSession() {
 export async function getAuthenticatedUserId() {
   return await ensureAuthenticatedSession();
 }
+
+export interface AccountStatus {
+  email: string | null;
+  isAnonymous: boolean;
+}
+
+export async function getAccountStatus(): Promise<AccountStatus> {
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) {
+    throw new Error(
+      error
+        ? `No se pudo consultar la cuenta: ${error.message}`
+        : "No se pudo consultar la cuenta."
+    );
+  }
+
+  return {
+    email: data.user.email ?? null,
+    isAnonymous: data.user.is_anonymous ?? !data.user.email,
+  };
+}
+
+function authRedirectUrl() {
+  return `${window.location.origin}/`;
+}
+
+export async function protectAccountWithEmail(email: string) {
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (!cleanEmail) {
+    throw new Error("Introduce un correo válido.");
+  }
+
+  const { error } = await supabase.auth.updateUser(
+    { email: cleanEmail },
+    { emailRedirectTo: authRedirectUrl() }
+  );
+
+  if (error) {
+    throw new Error(`No se pudo proteger la cuenta: ${error.message}`);
+  }
+}
+
+export async function sendAccountRecoveryLink(email: string) {
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (!cleanEmail) {
+    throw new Error("Introduce un correo válido.");
+  }
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email: cleanEmail,
+    options: {
+      emailRedirectTo: authRedirectUrl(),
+      shouldCreateUser: false,
+    },
+  });
+
+  if (error) {
+    throw new Error(`No se pudo enviar el enlace: ${error.message}`);
+  }
+}
