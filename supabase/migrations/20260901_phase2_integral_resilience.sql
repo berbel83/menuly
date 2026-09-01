@@ -38,6 +38,13 @@ alter table public.user_fasting_state enable row level security;
 alter table public.user_preferences enable row level security;
 alter table public.shopping_items enable row level security;
 
+drop policy if exists "Users manage own fasting state" on public.user_fasting_state;
+drop policy if exists "Users manage own preferences" on public.user_preferences;
+drop policy if exists "Members read household shopping" on public.shopping_items;
+drop policy if exists "Members add household shopping" on public.shopping_items;
+drop policy if exists "Members update household shopping" on public.shopping_items;
+drop policy if exists "Members delete household shopping" on public.shopping_items;
+
 create policy "Users manage own fasting state"
 on public.user_fasting_state for all to authenticated
 using (user_id = auth.uid()) with check (user_id = auth.uid());
