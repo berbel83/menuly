@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { useHouse } from "../../context/useHouse";
 import { ensureAuthenticatedSession } from "../../services/authService";
-import { findHouseByCode } from "../../services/houseService";
+import {
+  findHouseByCode,
+  loadCurrentUserHouse,
+} from "../../services/houseService";
 import {
   notificationsSupported,
   subscribeToPush,
@@ -44,6 +47,12 @@ export default function AuthBootstrap({
 
           if (active) {
             setHouseRef.current(migratedHouse);
+          }
+        } else {
+          const recoveredHouse = await loadCurrentUserHouse();
+
+          if (active && recoveredHouse) {
+            setHouseRef.current(recoveredHouse);
           }
         }
 

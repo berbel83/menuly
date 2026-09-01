@@ -84,3 +84,37 @@ export async function findHouseByCode(
   const row = getRpcRow(data);
   return row ? toHouse(row) : null;
 }
+
+export async function loadCurrentUserHouse(): Promise<House | null> {
+  await ensureAuthenticatedSession();
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .limit(1)
+    .maybeSingle();
+
+  if (membershipError) {
+    throw new Error(
+      `No se pudo recuperar tu hogar: ${membershipError.message}`
+    );
+  }
+
+  if (!membership?.household_id) {
+    return null;
+  }
+
+  const { data: house, error: houseError } = await supabase
+    .from("households")
+    .select("id, code, name")
+    .eq("id", membership.household_id)
+    .maybeSingle();
+
+  if (houseError) {
+    throw new Error(
+      `No se pudo abrir tu hogar: ${houseError.message}`
+    );
+  }
+
+  return house ? toHouse(house as HouseholdRpcRow) : null;
+}

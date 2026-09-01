@@ -32,6 +32,25 @@ export default function MealDetails({
                 <span>·</span>
                 <span>{meal.difficulty}</span>
               </div>
+
+              {meal.description && (
+                <p className="mt-3 max-w-md text-sm leading-6 text-[#6F675F]">
+                  {meal.description}
+                </p>
+              )}
+
+              {meal.tags && meal.tags.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {meal.tags.slice(0, 4).map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-[#F1E9DF] px-2.5 py-1 text-[11px] font-semibold text-[#786A5E]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button

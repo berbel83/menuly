@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { meals } from "../data/meals";
+import { catalogMeals as fallbackMeals } from "../data/catalogMeals";
 import { supabase } from "../lib/supabase";
 import {
   clearWeeklyMenu,
@@ -19,6 +19,7 @@ import type { Meal } from "../types/meal";
 export function useWeeklyMenu(
   houseCode: string,
   weekStart: string,
+  catalog: Meal[] = fallbackMeals,
 ) {
   const [weeklyMenu, setWeeklyMenu] =
     useState<WeeklyMenu>(() => createEmptyWeeklyMenu());
@@ -113,11 +114,11 @@ export function useWeeklyMenu(
         const mealId = weeklyMenu[slot][day];
 
         return mealId
-          ? meals.find((meal) => meal.id === mealId)
+          ? catalog.find((meal) => meal.id === mealId)
           : null;
       }),
     ).filter((meal): meal is Meal => Boolean(meal));
-  }, [weeklyMenu]);
+  }, [catalog, weeklyMenu]);
 
   async function refreshAfterError() {
     const menu = await loadWeeklyMenu(houseCode, weekStart);
