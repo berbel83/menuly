@@ -39,7 +39,7 @@ async function getCurrentPushEndpoint() {
 
 async function uploadHistoryEntry(
   entry: PendingFastingHistoryEntry,
-  endpoint: string
+  endpoint: string | null
 ) {
   const userId = await getAuthenticatedUserId();
 
@@ -70,10 +70,6 @@ export async function syncPendingFastingHistory() {
   }
 
   const endpoint = await getCurrentPushEndpoint();
-
-  if (!endpoint) {
-    return { synced: 0, remaining: pending.length };
-  }
 
   let synced = 0;
 

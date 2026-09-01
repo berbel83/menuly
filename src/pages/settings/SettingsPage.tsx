@@ -8,9 +8,11 @@ import {
   type AccountStatus,
 } from "../../services/authService";
 import { restoreHiddenMeals } from "../../services/mealCatalogService";
+import { leaveHouse, listUserHouses, rotateHouseCode } from "../../services/houseService";
+import type { House } from "../../types/house";
 
 export default function SettingsPage() {
-  const { house, logout } = useHouse();
+  const { house, logout, setHouse } = useHouse();
 
   const [copied, setCopied] = useState(false);
   const [accountStatus, setAccountStatus] =
@@ -22,12 +24,16 @@ export default function SettingsPage() {
   const [accountError, setAccountError] =
     useState<string | null>(null);
   const [catalogMessage, setCatalogMessage] = useState<string | null>(null);
+  const [houses, setHouses] = useState<House[]>([]);
+  const [houseMessage, setHouseMessage] = useState<string | null>(null);
 
   useEffect(() => {
     void getAccountStatus()
       .then(setAccountStatus)
       .catch(() => setAccountStatus(null));
   }, []);
+
+  useEffect(() => { void listUserHouses().then(setHouses).catch(() => setHouses([])); }, [house?.id]);
 
   if (!house) {
     return null;
@@ -52,13 +58,21 @@ export default function SettingsPage() {
   }
 
   function changeHouse() {
-    const confirmed = window.confirm(
-      "¿Quieres salir de este hogar en este dispositivo?"
-    );
+    logout();
+  }
 
-    if (confirmed) {
-      logout();
-    }
+  async function renewCode() {
+    if (!window.confirm("El código anterior dejará de funcionar. ¿Quieres renovarlo?")) return;
+    try {
+      const code = await rotateHouseCode(houseId);
+      setHouseMessage(`Nuevo código: ${code}. Vuelve a entrar para verlo actualizado.`);
+    } catch (error) { setHouseMessage(error instanceof Error ? error.message : "No se pudo renovar."); }
+  }
+
+  async function abandonHouse() {
+    if (!window.confirm("¿Seguro que quieres abandonar este hogar? Los demás miembros conservarán sus datos.")) return;
+    try { await leaveHouse(houseId); logout(); }
+    catch (error) { setHouseMessage(error instanceof Error ? error.message : "No se pudo abandonar."); }
   }
 
   async function protectAccount() {
@@ -149,7 +163,22 @@ export default function SettingsPage() {
               Comparte este código para que otra persona
               entre en el mismo hogar y vea el mismo menú.
             </p>
+            <button type="button" onClick={() => void renewCode()} className="mt-3 text-xs font-bold text-[#9B4C37]">
+              Renovar código de invitación
+            </button>
           </section>
+
+          {houses.length > 1 && (
+            <section className="mt-5 rounded-[24px] border border-[#E3D9CE] bg-[#FFFDFC] p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F543E]">Tus hogares</p>
+              <h3 className="mt-2 font-serif text-[21px] font-semibold">Hogar activo</h3>
+              <div className="mt-3 grid gap-2">
+                {houses.map((item) => <button key={item.id} type="button" disabled={item.id === houseId} onClick={() => setHouse(item)} className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-semibold ${item.id === houseId ? "border-[#B9CCB7] bg-[#EDF3EB] text-[#31513A]" : "border-[#E3D9CE] bg-white text-[#4A463F]"}`}>
+                  <span>{item.name}</span><span>{item.id === houseId ? "Activo" : "Cambiar"}</span>
+                </button>)}
+              </div>
+            </section>
+          )}
 
           <section className="mt-5 rounded-[24px] border border-[#E3D9CE] bg-[#FFFDFC] p-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F543E]">
@@ -243,9 +272,7 @@ export default function SettingsPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-[#81766D]">
-              Compausa olvidará este hogar en este dispositivo
-              y volverá a mostrar la pantalla para crear uno
-              o introducir otro código.
+              Elige otro hogar o entra con un código diferente. Esto no elimina tu pertenencia ni tus datos.
             </p>
 
             <button
@@ -255,11 +282,15 @@ export default function SettingsPage() {
             >
               Cambiar de hogar
             </button>
+            <button type="button" onClick={() => void abandonHouse()} className="mt-3 w-full rounded-2xl px-4 py-3 text-sm font-semibold text-[#8D4A3A]">
+              Abandonar este hogar
+            </button>
+            {houseMessage && <p className="mt-3 text-sm leading-6 text-[#64705F]">{houseMessage}</p>}
           </section>
 
           <section className="mt-5 px-1">
             <p className="text-center text-xs text-[#A49A90]">
-              Compausa · versión 0.2.1
+              Compausa · versión 0.3.0
             </p>
           </section>
         </div>

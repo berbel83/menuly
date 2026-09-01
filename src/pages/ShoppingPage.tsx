@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "../components/layout/AppShell";
 import { useHouse } from "../context/useHouse";
+import { useMealCatalog } from "../hooks/useMealCatalog";
 import { useShoppingList } from "../hooks/useShoppingList";
 import { useWeeklyMenu } from "../hooks/useWeeklyMenu";
 import { formatWeekStart } from "../services/weeklyMenuService";
+import { addManualShoppingItem, removeManualShoppingItem, setShoppingItemChecked, syncShoppingItems, type SharedShoppingItem } from "../services/shoppingService";
+import { supabase } from "../lib/supabase";
 
 function getMonday(date: Date) {
   const result = new Date(date);
@@ -16,146 +19,94 @@ function getMonday(date: Date) {
 
 export default function ShoppingPage() {
   const { house } = useHouse();
-  const weekStart = useMemo(
-    () => formatWeekStart(getMonday(new Date())),
-    [],
-  );
+  const weekStart = useMemo(() => formatWeekStart(getMonday(new Date())), []);
+  const { meals, loading: catalogLoading } = useMealCatalog(house?.id);
+  const { selectedMeals, loading: menuLoading, errorMessage: menuError } = useWeeklyMenu(house?.code ?? "", weekStart, meals);
+  const { shoppingList } = useShoppingList(selectedMeals);
+  const [items, setItems] = useState<SharedShoppingItem[]>([]);
+  const [newItem, setNewItem] = useState("");
+  const [syncing, setSyncing] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const {
-    selectedMeals,
-    loading,
-    errorMessage,
-  } = useWeeklyMenu(house?.code ?? "", weekStart);
+  useEffect(() => {
+    if (!house || catalogLoading || menuLoading) return;
+    let active = true;
+    void syncShoppingItems(house.id, weekStart, shoppingList)
+      .then((result) => { if (active) setItems(result); })
+      .catch((error) => { if (active) setErrorMessage(error instanceof Error ? error.message : "No se pudo cargar la compra."); })
+      .finally(() => { if (active) setSyncing(false); });
+    return () => { active = false; };
+  }, [house, weekStart, shoppingList, catalogLoading, menuLoading]);
 
-  const { shoppingList, itemCount } = useShoppingList(selectedMeals);
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!house) return;
+    const channel = supabase.channel(`shopping-${house.id}-${weekStart}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "shopping_items", filter: `household_id=eq.${house.id}` }, () => {
+        void syncShoppingItems(house.id, weekStart, shoppingList).then(setItems).catch(() => undefined);
+      }).subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [house, weekStart, shoppingList]);
 
-  if (!house) {
-    return null;
+  if (!house) return null;
+  const checkedCount = items.filter((item) => item.checked).length;
+
+  async function toggle(item: SharedShoppingItem) {
+    const next = !item.checked;
+    setItems((current) => current.map((row) => row.key === item.key ? { ...row, checked: next } : row));
+    try { await setShoppingItemChecked(house!.id, weekStart, item.key, next); }
+    catch (error) {
+      setItems((current) => current.map((row) => row.key === item.key ? item : row));
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo guardar el cambio.");
+    }
   }
 
-  function itemKey(name: string, quantity: string) {
-    return `${name}-${quantity}`;
+  async function addItem() {
+    if (!newItem.trim()) return;
+    try {
+      await addManualShoppingItem(house!.id, weekStart, newItem);
+      setNewItem("");
+      setItems(await syncShoppingItems(house!.id, weekStart, shoppingList));
+    } catch (error) { setErrorMessage(error instanceof Error ? error.message : "No se pudo añadir."); }
   }
 
-  function toggleItem(name: string, quantity: string) {
-    const key = itemKey(name, quantity);
-
-    setCheckedItems((current) => {
-      const next = new Set(current);
-
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-
-      return next;
-    });
+  async function removeItem(item: SharedShoppingItem) {
+    await removeManualShoppingItem(house!.id, weekStart, item.key);
+    setItems((current) => current.filter((row) => row.key !== item.key));
   }
 
   return (
     <AppShell>
-      <div className="min-h-screen bg-[#FBF8F3] pb-24">
-        <header className="bg-[#3F6248] px-5 pb-5 pt-5 text-white">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/65">
-            Hogar · {house.name}
-          </p>
-          <h1 className="mt-1 font-serif text-[30px] font-semibold">
-            Lista de la compra
-          </h1>
-          <p className="mt-1 text-sm text-white/70">
-            Generada con el menú de esta semana
-          </p>
+      <div className="min-h-screen bg-[var(--canvas)] pb-28">
+        <header className="brand-hero px-5 pb-7 pt-6 text-white">
+          <p className="eyebrow text-white/70">Hogar · {house.name}</p>
+          <h1 className="mt-1 font-serif text-[32px] font-semibold">Lista de la compra</h1>
+          <p className="mt-1 text-sm text-white/75">Compartida y actualizada con vuestro menú</p>
         </header>
-
-        <main className="px-5 py-5">
-          {errorMessage && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {errorMessage}
-            </div>
-          )}
-
-          {loading ? (
-            <p className="py-12 text-center text-sm text-[#81766D]">
-              Preparando la lista...
-            </p>
-          ) : itemCount === 0 ? (
-            <section className="rounded-[24px] border border-[#E3D9CE] bg-white px-6 py-12 text-center">
-              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#EDF3EB] text-2xl">
-                ✓
-              </div>
-              <h2 className="mt-4 font-serif text-[22px] font-semibold">
-                Todavía no hay productos
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-[#81766D]">
-                Añade platos al menú semanal y reuniremos aquí sus ingredientes.
-              </p>
+        <main className="-mt-2 px-5 py-5">
+          {(menuError || errorMessage) && <div className="alert-error mb-4">{menuError || errorMessage}</div>}
+          <form onSubmit={(event) => { event.preventDefault(); void addItem(); }} className="surface-card mb-5 flex gap-2 p-2">
+            <input value={newItem} onChange={(event) => setNewItem(event.target.value)} className="min-w-0 flex-1 rounded-2xl bg-transparent px-3 py-2.5 text-sm text-[var(--ink)] outline-none placeholder:text-[var(--muted)]" placeholder="Añadir algo que también necesitéis" aria-label="Nuevo producto" />
+            <button className="rounded-2xl bg-[var(--coral)] px-4 text-sm font-bold text-white" type="submit">Añadir</button>
+          </form>
+          {(syncing || catalogLoading || menuLoading) ? <p className="py-12 text-center text-sm text-[var(--muted)]">Preparando la lista…</p> : items.length === 0 ? (
+            <section className="surface-card px-6 py-12 text-center">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--sage-soft)] text-2xl text-[var(--forest)]">✓</div>
+              <h2 className="mt-4 font-serif text-[23px] font-semibold">Todavía no hay productos</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Añade platos al menú o escribe cualquier producto arriba.</p>
             </section>
-          ) : (
-            <>
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm font-semibold text-[#3F6248]">
-                  {checkedItems.size} de {itemCount} comprados
-                </p>
-                {checkedItems.size > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setCheckedItems(new Set())}
-                    className="text-xs font-bold text-[#D96536]"
-                  >
-                    Desmarcar
-                  </button>
-                )}
-              </div>
-
-              <div className="overflow-hidden rounded-[22px] border border-[#E3D9CE] bg-white">
-                {shoppingList.map((item) => {
-                  const key = itemKey(item.name, item.quantity);
-                  const checked = checkedItems.has(key);
-
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleItem(item.name, item.quantity)}
-                      className="flex w-full items-center gap-3 border-b border-[#EEE7DF] px-4 py-3.5 text-left last:border-b-0"
-                    >
-                      <span
-                        className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-bold ${
-                          checked
-                            ? "border-[#7A8B65] bg-[#7A8B65] text-white"
-                            : "border-[#CFC5BA] text-transparent"
-                        }`}
-                      >
-                        ✓
-                      </span>
-
-                      <span
-                        className={`min-w-0 flex-1 truncate text-sm font-medium ${
-                          checked
-                            ? "text-[#AAA197] line-through"
-                            : "text-[#3A3732]"
-                        }`}
-                      >
-                        {item.name}
-                      </span>
-
-                      <span
-                        className={`shrink-0 text-sm ${
-                          checked
-                            ? "text-[#B8B0A7] line-through"
-                            : "font-medium text-[#746B63]"
-                        }`}
-                      >
-                        {item.quantity}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
+          ) : <>
+            <div className="mb-3 flex items-end justify-between"><div><p className="eyebrow text-[var(--forest)]">Esta semana</p><p className="mt-1 text-sm text-[var(--muted)]">{checkedCount} de {items.length} comprados</p></div><div className="h-2 w-28 overflow-hidden rounded-full bg-[var(--sage-soft)]"><div className="h-full rounded-full bg-[var(--sage)] transition-all" style={{ width: `${checkedCount / items.length * 100}%` }} /></div></div>
+            <div className="surface-card overflow-hidden">
+              {items.map((item) => <div key={item.key} className="flex items-center border-b border-[var(--line)] last:border-0">
+                <button type="button" onClick={() => void toggle(item)} className="flex min-w-0 flex-1 items-center gap-3 px-4 py-4 text-left">
+                  <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-bold ${item.checked ? "border-[var(--sage)] bg-[var(--sage)] text-white" : "border-[var(--line-strong)] text-transparent"}`}>✓</span>
+                  <span className={`min-w-0 flex-1 text-sm font-semibold ${item.checked ? "text-[var(--muted)] line-through" : "text-[var(--ink)]"}`}>{item.name}</span>
+                  {item.quantity && <span className={`shrink-0 text-sm ${item.checked ? "text-[var(--muted)] line-through" : "text-[var(--ink-soft)]"}`}>{item.quantity}</span>}
+                </button>
+                {item.manuallyAdded && <button onClick={() => void removeItem(item)} type="button" aria-label={`Eliminar ${item.name}`} className="mr-2 grid h-10 w-10 place-items-center rounded-full text-[var(--muted)]">×</button>}
+              </div>)}
+            </div>
+          </>}
         </main>
       </div>
     </AppShell>

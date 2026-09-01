@@ -1,10 +1,11 @@
 import type { House } from "../types/house";
 
-const STORAGE_KEY = "menuly-house";
+const STORAGE_KEY = "compausa-house";
+const LEGACY_STORAGE_KEY = "menuly-house";
 
 export function loadHouse(): House | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
 
     if (!raw) return null;
 
@@ -23,4 +24,5 @@ export function saveHouse(house: House) {
 
 export function clearHouse() {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
 }

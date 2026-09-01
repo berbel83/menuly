@@ -175,25 +175,25 @@ function RecipeSelectionContent({
   return (
     <AppShell>
       <div className="flex min-h-screen flex-col sm:min-h-[760px]">
-        <header className="shrink-0 border-b border-[#E7DFD6] bg-[#FBF8F3] px-5 pb-4 pt-5">
+        <header className="brand-hero shrink-0 px-5 pb-5 pt-5 text-white">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() =>
                 navigate(`/menu?week=${weekStart}`)
               }
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#E2D9CF] bg-[#FFFDFC] text-[25px] font-light text-[#5E574F]"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-[25px] font-light text-white"
               aria-label="Volver"
             >
               ‹
             </button>
 
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#D96536]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/65">
                 {selectedDay}
               </p>
 
-              <h1 className="font-serif text-[25px] font-semibold tracking-[-0.03em] text-[#25251F]">
+              <h1 className="font-serif text-[25px] font-semibold tracking-[-0.03em] text-white">
                 {selectedSlot === "main"
                   ? "Elegir comida principal"
                   : "Añadir otra comida"}
@@ -203,7 +203,7 @@ function RecipeSelectionContent({
 
           <div className="relative mt-4">
             <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#93887D]"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#697269]"
               width="18"
               height="18"
               viewBox="0 0 24 24"
@@ -225,7 +225,7 @@ function RecipeSelectionContent({
               }
               placeholder="Buscar una receta..."
               autoFocus
-              className="w-full rounded-2xl border border-[#E1D8CE] bg-[#FFFDFC] py-3.5 pl-11 pr-4 text-sm text-[#2D2A26] outline-none transition placeholder:text-[#AAA197] focus:border-[#D96536] focus:ring-4 focus:ring-[#D96536]/10"
+              className="w-full rounded-2xl border border-white/15 bg-white py-3.5 pl-11 pr-4 text-sm font-medium text-[var(--ink)] shadow-sm outline-none transition placeholder:text-[#8A928B] focus:border-[var(--coral)] focus:ring-4 focus:ring-white/15"
             />
           </div>
 
@@ -235,8 +235,8 @@ function RecipeSelectionContent({
               onClick={() => setCollection("main_fasting")}
               className={`rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
                 collection === "main_fasting"
-                  ? "bg-[#3F6248] text-white"
-                  : "border border-[#D9E1D7] bg-[#F4F7F2] text-[#4E6853]"
+                  ? "bg-white text-[var(--forest)] shadow-sm"
+                  : "border border-white/20 bg-white/10 text-white/85"
               }`}
             >
               Comida principal
@@ -247,8 +247,8 @@ function RecipeSelectionContent({
               onClick={() => setCollection("all")}
               className={`rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
                 collection === "all"
-                  ? "bg-[#3F6248] text-white"
-                  : "border border-[#D9E1D7] bg-[#F4F7F2] text-[#4E6853]"
+                  ? "bg-white text-[var(--forest)] shadow-sm"
+                  : "border border-white/20 bg-white/10 text-white/85"
               }`}
             >
               Ver todos
@@ -260,8 +260,8 @@ function RecipeSelectionContent({
             onClick={() => setOnlyFavorites((current) => !current)}
             className={`mt-2 w-full rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
               onlyFavorites
-                ? "bg-[#F9E8E3] text-[#B5533C]"
-                : "border border-[#E5DDD3] bg-[#FFFDFC] text-[#71685F]"
+                ? "bg-[#F9E1D9] text-[#913E2B]"
+                : "border border-white/20 bg-white/10 text-white/85"
             }`}
           >
             {onlyFavorites ? "♥ Solo favoritos" : "♡ Ver solo favoritos"}
@@ -290,8 +290,8 @@ function RecipeSelectionContent({
                   }
                   className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
                     active
-                      ? "bg-[#D96536] text-white"
-                      : "border border-[#E2D9CF] bg-[#FFFDFC] text-[#71685F]"
+                      ? "bg-[var(--coral)] text-white"
+                      : "border border-white/20 bg-white/10 text-white/85"
                   }`}
                 >
                   {item}
@@ -301,7 +301,7 @@ function RecipeSelectionContent({
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-8">
+        <main className="min-h-0 flex-1 overflow-y-auto bg-[var(--canvas)] px-5 pb-8">
           {catalogError && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {catalogError}
@@ -359,21 +359,21 @@ function RecipeSelectionContent({
               </p>
             </div>
           ) : (
-            <div className="border-t border-[#E7DFD6]">
+            <div className="grid gap-3 pb-4">
               {filteredMeals.map((meal) => (
-                <div key={meal.id} className="flex items-center border-b border-[#E7DFD6]">
+                <article key={meal.id} className="surface-card flex items-stretch overflow-hidden">
                   <button
                     type="button"
                     disabled={saving}
                     onClick={() => chooseMeal(meal.id)}
-                    className="group flex min-w-0 flex-1 items-center gap-3 py-3.5 pr-2 text-left transition hover:bg-[#F8F3ED] disabled:opacity-60"
+                    className="group flex min-w-0 flex-1 items-center gap-3 px-4 py-4 text-left transition hover:bg-[var(--sage-soft)] disabled:opacity-60"
                   >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-serif text-[17px] font-semibold leading-tight text-[#272720]">
+                    <p className="font-serif text-[18px] font-semibold leading-[1.25] text-[var(--ink)]">
                       {meal.name}
                     </p>
 
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#8B8178]">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-[var(--muted)]">
                       <span>
                         {meal.cookingTime} min
                       </span>
@@ -406,7 +406,7 @@ function RecipeSelectionContent({
                   </span>
                   </button>
 
-                  <div className="flex shrink-0 items-center gap-1 pl-1">
+                  <div className="flex w-12 shrink-0 flex-col items-center justify-center gap-1 border-l border-[var(--line)] bg-[#FAFAF6]">
                     <button
                       type="button"
                       onClick={() => void toggleFavorite(meal.id)}
@@ -433,7 +433,7 @@ function RecipeSelectionContent({
                       {meal.isSystem === false || meal.householdId ? "✎" : "◌"}
                     </button>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           )}

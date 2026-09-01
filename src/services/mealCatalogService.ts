@@ -31,6 +31,19 @@ function fallbackCatalog(): Meal[] {
   }));
 }
 
+const CATALOG_CACHE_PREFIX = "compausa-meal-catalog";
+
+function loadCachedCatalog(householdId: string): Meal[] | null {
+  try {
+    const value = localStorage.getItem(`${CATALOG_CACHE_PREFIX}:${householdId}`);
+    return value ? JSON.parse(value) as Meal[] : null;
+  } catch { return null; }
+}
+
+function cacheCatalog(householdId: string, meals: Meal[]) {
+  try { localStorage.setItem(`${CATALOG_CACHE_PREFIX}:${householdId}`, JSON.stringify(meals)); } catch { /* cache opcional */ }
+}
+
 function mapMeal(row: MealRow, favoriteIds: Set<number>): Meal {
   return {
     id: row.id,
@@ -75,7 +88,9 @@ export async function loadMealCatalog(householdId?: string): Promise<Meal[]> {
     ]);
 
   if (error || preferencesError || !rows?.length) {
-    return fallbackCatalog();
+    const cached = loadCachedCatalog(householdId);
+    if (cached?.length) return cached;
+    throw new Error("No se pudo cargar el catálogo compartido. Comprueba la conexión e inténtalo de nuevo.");
   }
 
   const hiddenIds = new Set(
@@ -85,9 +100,11 @@ export async function loadMealCatalog(householdId?: string): Promise<Meal[]> {
     (preferences ?? []).filter((item) => item.is_favorite).map((item) => item.meal_id),
   );
 
-  return (rows as MealRow[])
+  const catalog = (rows as MealRow[])
     .filter((row) => !hiddenIds.has(row.id))
     .map((row) => mapMeal(row, favoriteIds));
+  cacheCatalog(householdId, catalog);
+  return catalog;
 }
 
 export async function saveMealPreference(
@@ -182,21 +199,10 @@ export async function updateHouseholdMeal(
 }
 
 export async function deleteHouseholdMeal(householdId: string, mealId: number) {
-  const { error: menuError } = await supabase
-    .from("weekly_menu")
-    .update({ meal_id: null, updated_at: new Date().toISOString() })
-    .eq("household_id", householdId)
-    .eq("meal_id", mealId);
-
-  if (menuError) {
-    throw new Error(`No se pudo retirar el plato de los menús: ${menuError.message}`);
-  }
-
-  const { error } = await supabase
-    .from("meals")
-    .delete()
-    .eq("id", mealId)
-    .eq("household_id", householdId);
+  const { error } = await supabase.rpc("delete_household_meal", {
+    p_household_id: householdId,
+    p_meal_id: mealId,
+  });
 
   if (error) {
     throw new Error(`No se pudo eliminar el plato: ${error.message}`);

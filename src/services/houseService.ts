@@ -88,9 +88,15 @@ export async function findHouseByCode(
 export async function loadCurrentUserHouse(): Promise<House | null> {
   await ensureAuthenticatedSession();
 
+  const { data: preference } = await supabase
+    .from("user_preferences")
+    .select("active_household_id")
+    .maybeSingle();
+
   const { data: membership, error: membershipError } = await supabase
     .from("household_members")
-    .select("household_id")
+    .select("household_id, created_at")
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
@@ -100,14 +106,15 @@ export async function loadCurrentUserHouse(): Promise<House | null> {
     );
   }
 
-  if (!membership?.household_id) {
+  const householdId = preference?.active_household_id ?? membership?.household_id;
+  if (!householdId) {
     return null;
   }
 
   const { data: house, error: houseError } = await supabase
     .from("households")
     .select("id, code, name")
-    .eq("id", membership.household_id)
+    .eq("id", householdId)
     .maybeSingle();
 
   if (houseError) {
@@ -117,4 +124,38 @@ export async function loadCurrentUserHouse(): Promise<House | null> {
   }
 
   return house ? toHouse(house as HouseholdRpcRow) : null;
+}
+
+export async function listUserHouses(): Promise<House[]> {
+  await ensureAuthenticatedSession();
+  const { data: memberships, error } = await supabase.from("household_members")
+    .select("household_id").order("created_at", { ascending: true });
+  if (error) throw new Error(`No se pudieron cargar tus hogares: ${error.message}`);
+  const ids = (memberships ?? []).map((row) => row.household_id);
+  if (!ids.length) return [];
+  const { data, error: houseError } = await supabase.from("households")
+    .select("id,code,name").in("id", ids);
+  if (houseError) throw new Error(`No se pudieron cargar tus hogares: ${houseError.message}`);
+  return (data ?? []).map((row) => toHouse(row as HouseholdRpcRow));
+}
+
+export async function saveActiveHouse(householdId: string) {
+  const userId = await ensureAuthenticatedSession();
+  const { error } = await supabase.from("user_preferences").upsert({
+    user_id: userId, active_household_id: householdId,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Madrid",
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(`No se pudo cambiar de hogar: ${error.message}`);
+}
+
+export async function leaveHouse(householdId: string) {
+  const { error } = await supabase.rpc("leave_household", { p_household_id: householdId });
+  if (error) throw new Error(`No se pudo abandonar el hogar: ${error.message}`);
+}
+
+export async function rotateHouseCode(householdId: string) {
+  const { data, error } = await supabase.rpc("rotate_household_code", { p_household_id: householdId });
+  if (error) throw new Error(`No se pudo renovar el código: ${error.message}`);
+  return String(data);
 }

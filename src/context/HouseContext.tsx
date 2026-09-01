@@ -11,6 +11,7 @@ import {
   clearHouse,
 } from "../storage/houseStorage";
 import { HouseContext } from "./houseContextDefinition";
+import { saveActiveHouse } from "../services/houseService";
 
 export function HouseProvider({
   children,
@@ -24,6 +25,7 @@ export function HouseProvider({
     saveHouse(house);
 
     setHouseState(house);
+    void saveActiveHouse(house.id).catch(() => undefined);
   }
 
   function logout() {

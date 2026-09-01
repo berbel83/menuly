@@ -49,7 +49,7 @@ export default function MealRow({
 
           {meal ? (
             <>
-              <p className="truncate font-serif text-[16px] font-semibold text-[#273127]">
+              <p className="font-serif text-[16px] font-semibold leading-snug text-[#273127]">
                 {meal.name}
               </p>
               <p className="mt-0.5 text-[10px] font-medium text-[#7F857C]">
@@ -93,7 +93,7 @@ export default function MealRow({
             <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-[#8A9388]">
               Otra comida
             </span>
-            <span className="block truncate text-xs font-semibold text-[#4F594F]">
+            <span className="block text-xs font-semibold leading-snug text-[#4F594F]">
               {secondaryMeal
                 ? secondaryMeal.name
                 : "Añadir solo si la necesitas"}
