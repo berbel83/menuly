@@ -14,8 +14,8 @@ export default function MealDetails({
   onRemove,
 }: MealDetailsProps) {
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-3 backdrop-blur-[2px] sm:items-center">
-      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] bg-[#FBF8F3] shadow-2xl sm:rounded-[28px]">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-3 backdrop-blur-[2px] sm:items-center">
+      <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-[28px] bg-[#FBF8F3] shadow-2xl sm:max-h-[92dvh]">
         <header className="shrink-0 border-b border-[#E5DDD3] px-6 pb-5 pt-6">
           <div className="flex items-start justify-between gap-5">
             <div>
