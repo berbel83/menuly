@@ -601,7 +601,7 @@ export default function FastingPage() {
 
   return (
     <AppShell>
-      <div className="min-h-screen bg-[#FBF8F3] sm:min-h-[760px]">
+      <div className="min-h-screen bg-[#FBF8F3] pb-24 sm:min-h-[760px]">
         <header className="flex items-center gap-3 border-b border-[#E7DFD6] px-5 py-5">
           <Link
             to="/"
